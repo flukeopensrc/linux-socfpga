@@ -98,7 +98,6 @@
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
 				reg = < 0x0004A440 0x00000020 >;
 				clocks = < &Richmond_FPGA_IO_HPS_CLK >;
-				flk,gpio-bank-width = < 1 >;	/* embeddedsw.dts.params.altr,gpio-bank-width type NUMBER */
 				resetvalue = < 1 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = < 2 >;
 				gpio-controller;
