@@ -61,8 +61,8 @@
 			Richmond_FPGA_IO_fgpib_0: fgpib@0x100049800 {
 				compatible = "flk,fgpib-4.0";
 				reg = < 0x00049800 0x00000020 
-					0x00000001 0x00049840 0x00000004 
-					0x00000001 0x00049880 0x00000004 >;
+					    0x00049840 0x00000004 
+					    0x00049880 0x00000004 >;
 				reg-names = "s0", "s1", "s2";
 				interrupt-parent = < &intc >;
 				interrupts = < 0 57 4 >;
