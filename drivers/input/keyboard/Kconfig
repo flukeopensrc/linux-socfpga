@@ -200,6 +200,15 @@ config KEYBOARD_EP93XX
 	  To compile this driver as a module, choose M here: the
 	  module will be called ep93xx_keypad.
 
+config KEYBOARD_FLUKE_MATRIX
+        tristate "Fluke Matrix Keypad support"
+        select INPUT_FLUKEMATRIXKBD
+        help
+          Say Y here to enable support for the Fluke matrix keypad.
+
+          To compile this driver as a module, choose M here: the
+          module will be called fluke_keypad.
+
 config KEYBOARD_GPIO
 	tristate "GPIO Buttons"
 	depends on GPIOLIB || COMPILE_TEST
