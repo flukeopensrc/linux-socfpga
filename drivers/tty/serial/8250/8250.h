@@ -179,6 +179,8 @@ extern int serial8250_tx_dma(struct uart_8250_port *);
 extern int serial8250_rx_dma(struct uart_8250_port *, unsigned int iir);
 extern int serial8250_request_dma(struct uart_8250_port *);
 extern void serial8250_release_dma(struct uart_8250_port *);
+extern int read_fifo_level(struct uart_port *);
+extern unsigned int read_watermark(struct uart_port *);
 #else
 static inline int serial8250_tx_dma(struct uart_8250_port *p)
 {
