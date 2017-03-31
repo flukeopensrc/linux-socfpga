@@ -3954,6 +3954,7 @@ int serial8250_register_8250_port(struct uart_8250_port *up)
 		uart->fast_uart		= up->fast_uart;		//Joseph: Added for Fast UART
 		if(up->fast_uart) {
 			serial8250_pops.ioctl = fast_uart_ioctl;
+			uart->port.ops = &serial8250_pops;
 			uart->dma		= up->dma;
 		}
 		else

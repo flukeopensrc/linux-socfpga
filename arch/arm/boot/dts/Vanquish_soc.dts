@@ -32,16 +32,16 @@
 	};
 
 	aliases {
-		serial0 = &uart0;
-		serial1 = &uart1;
+	        serial0 = &uart0;
+	        serial1 = &uart1;
 		/* this allow the ethaddr uboot environmnet variable contents
-		* to be added to the gmac1 device tree blob.
-		*/
+		 * to be added to the gmac1 device tree blob.
+		 */
 		ethernet0 = &gmac1;
 	};
 
 	clocks {
-		#address-cells = < 1 >;
+	        #address-cells = < 1 >;
 		#size-cells = < 1 >;
 		
 		clk_0: clk_0 {
@@ -58,7 +58,7 @@
 			clock-output-names = "Vanquish_FPGA_IO_HPS_CLK-clk";
 		}; //end Vanquish_FPGA_IO_HPS_CLK (Vanquish_FPGA_IO_HPS_CLK)
 
-	};      
+        };      
 		
 };
 
@@ -95,7 +95,7 @@
 };
 
 &i2c1 {
-	status = "okay";
+        status = "okay";
 	speed-mode = <0>;
 	
 	rtc@51 {
@@ -105,38 +105,37 @@
 };
 
 &spi0 {
-	#address-cells = < 1 >;	
-	#size-cells = < 0 >;	
-	bus-num = < 0 >;	
-	num-chipselect = < 4 >;	
-	status = "okay";	
+        #address-cells = < 1 >;	
+        #size-cells = < 0 >;	
+        bus-num = < 0 >;	
+        num-chipselect = < 4 >;	
+        status = "okay";	
         
-	temp@1 {
-		compatible = "hwmon,adt7302";
-		reg = < 1 >;	
-		spi-max-frequency = < 1000000 >;	
-        spi-cpha = < 1 >;
-        spi-cpol = < 1 >;
+        temp@1 {
+                compatible = "hwmon,adt7302";
+                reg = < 1 >;	
+                spi-max-frequency = < 1000000 >;
+		spi-cpha = < 1 >;
+		spi-cpol = < 1 >;
 		enable-dma = < 1 >;	
-	};
+        };
         
-	spidev@0 {
-		compatible = "spidev";
-		reg = < 0 >;
-		spi-max-frequency = < 100000000 >;
-		enable-dma = < 1 >;
-	};
+        spidev@0 {
+                compatible = "spidev";
+                reg = < 0 >;
+                spi-max-frequency = < 100000000 >;
+                enable-dma = < 1 >;
+        };
 };
 
 &qspi {
 	status = "okay";
-	flash0: n25q512a@0 {
+	flash0: n25q00@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "n25q512a";
+		compatible = "n25q00";
 		reg = <0>;      /* chip select */
 		spi-max-frequency = <100000000>;
-		m25p,fast-read;
 
 		cdns,page-size = <256>;
 		cdns,block-size = <16>;
@@ -147,28 +146,28 @@
 		cdns,tslch-ns = <4>;
         cdns,is-decoded-cs = <0>;
 
-		part0: partition@0 {
-			label = "Flash 0 Raw Data";	/* appended from boardinfo */
-			reg = < 0x00000000 0x00800000 >;	/* appended from boardinfo */
-		}; //end partition@0 (part0)
+                part0: partition@0 {
+                        label = "Flash 0 Raw Data";	/* appended from boardinfo */
+                        reg = < 0x00000000 0x00800000 >;	/* appended from boardinfo */
+                }; //end partition@0 (part0)
 
-		part1: partition@800000 {
-			label = "Flash 1 jffs2 Filesystem";	/* appended from boardinfo */
-			reg = < 0x00800000 0x03000000 >;	/* appended from boardinfo */
-		}; //end partition@800000 (part1)
+                part1: partition@800000 {
+                        label = "Flash 1 jffs2 Filesystem";	/* appended from boardinfo */
+                        reg = < 0x00800000 0x03000000 >;	/* appended from boardinfo */
+                }; //end partition@800000 (part1)
 
-		part2: partition@3800000 {
-			label = "FPGA Image";	/* appended from boardinfo */
-			reg = < 0x03800000 0x00600000 >;	/* appended from boardinfo */
-		}; //end partition@3800000 (part2)
+                part2: partition@3800000 {
+                        label = "FPGA Image";	/* appended from boardinfo */
+                        reg = < 0x03800000 0x00600000 >;	/* appended from boardinfo */
+                }; //end partition@3800000 (part2)
 
-		part3: partition@3e00000 {
-			label = "Splash Screen Image";	/* appended from boardinfo */
-			reg = < 0x03E00000 0x00200000 >;	/* appended from boardinfo */
-		}; //end partition@3e00000 (part3)
-	};
+                part3: partition@3e00000 {
+                        label = "Splash Screen Image";	/* appended from boardinfo */
+                        reg = < 0x03E00000 0x00200000 >;	/* appended from boardinfo */
+                }; //end partition@3e00000 (part3)
+        };
 
-	flash1: n25q00@1 {
+        flash1: n25q00@1 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "n25q00";
@@ -183,11 +182,12 @@
 		cdns,tchsh-ns = <4>;
 		cdns,tslch-ns = <4>;
 
-		part4: partition@0 {
-			label = "Flash 1 Raw Data";	/* appended from boardinfo */
-			reg = < 0x00000000 0x07000000 >;	/* appended from boardinfo */
-		}; //end partition@0 (part4)
-	}; //end n25q00@1 (flash1)		
+                part4: partition@0 {
+                        label = "Flash 1 Raw Data";	/* appended from boardinfo */
+                        reg = < 0x00000000 0x07000000 >;	/* appended from boardinfo */
+                }; //end partition@0 (part4)
+        }; //end n25q00@1 (flash1)		
+
 };
 
 &uart0 {
