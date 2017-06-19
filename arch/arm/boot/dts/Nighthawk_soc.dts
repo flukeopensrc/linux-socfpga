@@ -90,7 +90,7 @@
 };
 
 &mmc0 {
-    status = "disabled"
+    status = "disabled";
 }
 
 
