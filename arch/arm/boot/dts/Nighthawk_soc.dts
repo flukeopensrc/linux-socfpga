@@ -91,7 +91,7 @@
 
 &mmc0 {
     status = "disabled";
-}
+};
 
 
 &i2c0 {
