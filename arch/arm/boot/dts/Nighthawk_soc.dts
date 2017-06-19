@@ -73,7 +73,7 @@
     max-frame-size = <3800>;
     tx-fifo-depth = <4096>;	/* embeddedsw.dts.params.tx-fifo-depth type NUMBER */
 	rx-fifo-depth = <4096>;	/* embeddedsw.dts.params.rx-fifo-depth type NUMBER */
-    altr,emac-splitter = <0x100050000>;	/* appended from boardinfo */
+    altr,emac-splitter = <@hps_emac_interface_splitter_0>;	/* appended from boardinfo */
 };
 
 &gmac1 {
