@@ -40,12 +40,20 @@
 			clock-output-names = "clk_0-clk";
 		}; //end clk_0 (clk_0)
 
+        cfg_s2f_usr0_clk: cfg_s2f_usr0_clk {
+            compatible = "altr,socfpga-perip-clk";
+            reg = <0x0000005c>;
+            clocks = <&main_pll>;
+            #clock-cells = <0>;
+        }; //end cfg_s2f_usr0_clk (cfg_s2f_usr0_clk)
+
 		Nighthawk_FPGA_IO_HPS_CLK: Nighthawk_FPGA_IO_HPS_CLK {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <60000000>;	/* 60.00 MHz */
 			clock-output-names = "Nighthawk_FPGA_IO_HPS_CLK-clk";
 		}; //end Nighthawk_FPGA_IO_HPS_CLK (Nighthawk_FPGA_IO_HPS_CLK)
+
         h2f_user0_clock: h2f_user0_clock {
             compatible = "altr,socfpga-gate-clk";
             clocks = <&cfg_s2f_usr0_clk>;
