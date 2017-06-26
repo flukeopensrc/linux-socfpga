@@ -249,11 +249,6 @@
                 reg = <0x00050000 0x00000008>;
                 clocks = < &clk_0 >;
             }; //end splitter@0x100050000 (hps_emac_interface_splitter_0)
-
-            &hps_emac_interface_splitter_0 {
-                status = "okay";
-            };
-
         };
     };
 }; //end /
