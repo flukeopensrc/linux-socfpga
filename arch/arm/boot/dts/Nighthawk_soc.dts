@@ -50,6 +50,10 @@
 	}; //end clocks
 };
 
+&hps_emac_interface_splitter_0 {
+    status=disabled;
+};
+
 &gmac0 {
     phy-mode = "rgmii";
     snps,phy-addr = < 0xFFFFFFFF >;
