@@ -51,7 +51,7 @@
 };
 
 &hps_emac_interface_splitter_0 {
-    status=disabled;
+    status = "disabled";
 };
 
 &gmac0 {
