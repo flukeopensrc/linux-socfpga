@@ -48,7 +48,6 @@
 		}; //end Nighthawk_FPGA_IO_HPS_CLK (Nighthawk_FPGA_IO_HPS_CLK)
 
 	}; //end clocks
-
 };
 
 &gmac0 {
@@ -68,14 +67,8 @@
     tx-fifo-depth = <4096>;	/* embeddedsw.dts.params.tx-fifo-depth type NUMBER */
 	rx-fifo-depth = <4096>;	/* embeddedsw.dts.params.rx-fifo-depth type NUMBER */
     altr,emac-splitter = <&hps_emac_interface_splitter_0>;	/* appended from boardinfo */
-    status = "okay";
 };
 
-hps_emac_interface_splitter_0: splitter@0x100050000 {
-    compatible = "altr,splitter-15.1", "altr,emac-splitter-1.0";
-    reg = <0x00050000 0x00000008>;
-    clocks = < &clk_0 >;
-}; //end splitter@0x100050000 (hps_emac_interface_splitter_0)
 
 &gmac1 {
     status = "okay";

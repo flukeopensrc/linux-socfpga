@@ -243,6 +243,13 @@
                 reg = < 0x0004f000 0x00000020 >;
                 clocks = < &Nighthawk_FPGA_IO_pll_0 2 >;
             }; //end unknown@0x10004f000 (Nighthawk_FPGA_IO_AUDIO_IF_0)
+
+            hps_emac_interface_splitter_0: splitter@0x100050000 {
+                compatible = "altr,splitter-15.1", "altr,emac-splitter-1.0";
+                reg = <0x00050000 0x00000008>;
+                clocks = < &clk_0 >;
+                status = "okay";
+            }; //end splitter@0x100050000 (hps_emac_interface_splitter_0)
         };
     };
 }; //end /
