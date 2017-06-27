@@ -236,12 +236,6 @@
                 interrupts = < 0 64 4 >;
                 clocks = < &Nighthawk_FPGA_IO_HPS_CLK >;
             }; //end spi@0x100049200 (Nighthawk_FPGA_IO_spi_0)
-        
-            Nighthawk_FPGA_IO_AUDIO_IF_0: unknown@0x10004f000 {
-                compatible = "unknown,unknown-1.0";
-                reg = < 0x0004f000 0x00000020 >;
-                clocks = < &Nighthawk_FPGA_IO_pll_0 2 >;
-            }; //end unknown@0x10004f000 (Nighthawk_FPGA_IO_AUDIO_IF_0)
         };
     };
 }; //end /
