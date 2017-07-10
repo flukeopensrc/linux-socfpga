@@ -182,8 +182,10 @@ static void *socfpga_dwmac_probe(struct platform_device *pdev)
 	struct socfpga_dwmac	*dwmac;
 
 	dwmac = devm_kzalloc(dev, sizeof(*dwmac), GFP_KERNEL);
-	if (!dwmac)
+	if (!dwmac) {
+        printk("socfpga_dwmac_probe failure, devm_kzalloc failed. can't allocate $d bytes\n", sizeof(*dwmac));
 		return ERR_PTR(-ENOMEM);
+    }
 
 	ret = socfpga_dwmac_parse_data(dwmac, dev);
 	if (ret) {
