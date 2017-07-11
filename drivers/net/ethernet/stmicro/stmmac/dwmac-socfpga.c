@@ -116,13 +116,15 @@ static int socfpga_dwmac_parse_data(struct socfpga_dwmac *dwmac, struct device *
 		return -EINVAL;
 	}
 
-	np_splitter = of_parse_phandle(np, "altr,emac-splitter", 0);
+	np_splitter = of_parse_phandle(np, "altr,emac-splitter1.0", 0);
 	if (np_splitter) {
-        printk("np_splitter call is ok\n");
+        printk("FOUND a splitter!\n");
 		if (of_address_to_resource(np_splitter, 0, &res_splitter)) {
 			dev_info(dev, "Missing emac splitter address\n");
 			return -EINVAL;
 		}
+
+        printk("Splitter base/start address = %x\n", res_splitter.start);
 
 		dwmac->splitter_base = devm_ioremap_resource(dev, &res_splitter);
 		if (IS_ERR(dwmac->splitter_base)) {
