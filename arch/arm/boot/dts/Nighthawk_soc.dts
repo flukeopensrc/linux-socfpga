@@ -187,18 +187,18 @@
         }; //end partition@0 (part0)
 
         part1: partition@800000 {
-                    label = "Flash 1 jffs2 Filesystem"; /* appended from boardinfo */
-                    reg = < 0x00800000 0x03000000 >;    /* appended from boardinfo */
+                    label = "FPGA/RBF Image "; /* appended from boardinfo */
+                    reg = < 0x00800000 0x00600000 >;    /* appended from boardinfo */
         }; //end partition@800000 (part1)
 
-        part2: partition@3800000 {
+        part2: partition@0E00000 {
                     label = "FPGA Image";   /* appended from boardinfo */
-                    reg = < 0x03800000 0x00600000 >;    /* appended from boardinfo */
+                    reg = < 0x0E00000 0x00200000 >;    /* appended from boardinfo */
         }; //end partition@3800000 (part2)
 
         part3: partition@3e00000 {
-                    label = "Splash Screen Image";  /* appended from boardinfo */
-                    reg = < 0x03E00000 0x00200000 >;    /* appended from boardinfo */
+                    label = "Flash 0 FS partition";  /* appended from boardinfo */
+                    reg = < 0x01000000 0x07000000 >;    /* appended from boardinfo */
         }; //end partition@3e00000 (part3)
     };
 
@@ -218,7 +218,7 @@
         cdns,tslch-ns = <4>;
 
         part4: partition@0 {
-                    label = "Flash 1 Raw Data"; /* appended from boardinfo */
+                    label = "Flash 1 Root FS"; /* appended from boardinfo */
                     reg = < 0x00000000 0x07000000 >;    /* appended from boardinfo */
         }; //end partition@0 (part4)
     }; //end n25q00@1 (flash1)
