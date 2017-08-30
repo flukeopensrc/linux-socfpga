@@ -46,6 +46,9 @@
 
 static u32 i2c_dw_get_clk_rate_khz(struct dw_i2c_dev *dev)
 {
+	if (dev->ref_clk_freq)
+		return dev->ref_clk_freq;
+
 	return clk_get_rate(dev->clk)/1000;
 }
 
@@ -219,6 +222,8 @@ static int dw_i2c_plat_probe(struct platform_device *pdev)
 					 &dev->scl_falling_time);
 		device_property_read_u32(&pdev->dev, "clock-frequency",
 					 &dev->clk_freq);
+		device_property_read_u32(&pdev->dev, "refclk-frequency",
+					 &dev->ref_clk_freq);
 	}
 
 	acpi_speed = i2c_acpi_find_bus_speed(&pdev->dev);
@@ -268,8 +273,10 @@ static int dw_i2c_plat_probe(struct platform_device *pdev)
 		dev->master_cfg |= DW_IC_CON_SPEED_FAST;
 	}
 
-	dev->clk = devm_clk_get(&pdev->dev, NULL);
-	if (!i2c_dw_plat_prepare_clk(dev, true)) {
+	if (!dev->ref_clk_freq)
+		dev->clk = devm_clk_get(&pdev->dev, NULL);
+
+	if (dev->ref_clk_freq || !i2c_dw_plat_prepare_clk(dev, true)) {
 		dev->get_clk_rate_khz = i2c_dw_get_clk_rate_khz;
 
 		if (!dev->sda_hold_time && ht)
