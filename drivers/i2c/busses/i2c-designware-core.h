@@ -114,6 +114,7 @@ struct dw_i2c_dev {
 	unsigned int		rx_fifo_depth;
 	int			rx_outstanding;
 	u32			clk_freq;
+	u32			ref_clk_freq;
 	u32			sda_hold_time;
 	u32			sda_falling_time;
 	u32			scl_falling_time;
