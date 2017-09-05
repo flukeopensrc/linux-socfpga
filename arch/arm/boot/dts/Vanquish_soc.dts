@@ -58,17 +58,18 @@
 			clock-output-names = "Vanquish_FPGA_IO_HPS_CLK-clk";
 		}; //end Vanquish_FPGA_IO_HPS_CLK (Vanquish_FPGA_IO_HPS_CLK)
 
-        };      
+    };      
+
+    pmu {
+        compatible = "arm,cortex-a9-pmu";
+        interrupt-parent = <&intc>;
+        interrupts = <0 176 4>;
+        interrupt-affinity = <&cpu0>;
+        reg = <0xff111000 0x1000>;
+    };
 		
 };
 
-pmu: pmu@ff111000 {
-    compatible = "arm,cortex-a9-pmu";
-    interrupt-parent = <&intc>;
-    interrupts = <0 176 4>;
-    interrupt-affinity = <&cpu0>;
-    reg = <0xff111000 0x1000>;
-};
 
 &gmac1 {
 	status = "okay";
