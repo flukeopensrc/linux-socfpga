@@ -64,7 +64,7 @@
         compatible = "arm,cortex-a9-pmu";
         interrupt-parent = <&intc>;
         interrupts = <0 176 4>;
-        interrupt-affinity = <&cpu>;
+        interrupt-affinity = <&cpu0>;
         reg = <0xff111000 0x1000>;
     };
 		
