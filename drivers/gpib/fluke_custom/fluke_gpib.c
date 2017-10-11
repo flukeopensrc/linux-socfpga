@@ -320,7 +320,7 @@ static int fluke_dma_write(gpib_board_t *board,
 	// make sure fluke_dma_callback got called
 	if(test_bit(DMA_WRITE_IN_PROGRESS_BN, &nec_priv->state))
 	{
-		fluke_dma_callbacard);
+		fluke_dma_callback(board);
 	}
 
 	*bytes_written = readl(e_priv->write_transfer_counter) & write_transfer_counter_mask;
