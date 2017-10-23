@@ -68,7 +68,7 @@
 };
 
 &gmac0 {
-    phy-mode = "gmii";
+    phy-mode = "rgmii";
     snps,phy-addr = < 0xFFFFFFFF >;
     phy-addr = < 0xFFFFFFFF >;
 
@@ -89,7 +89,7 @@
 
 &gmac1 {
     status = "okay";
-    phy-mode = "rgmii";
+    phy-mode = "gmii";
     snps,phy-addr = < 0xFFFFFFFF >;
     phy-addr = < 0xFFFFFFFF >;
 
