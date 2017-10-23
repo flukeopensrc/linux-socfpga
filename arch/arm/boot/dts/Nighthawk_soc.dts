@@ -25,6 +25,8 @@
 		serial1 = "&uart1";
 		serial2 = "&uart2";
 		spi0 = "&spi0";
+        ethernet0 = &gmac1;
+        ethernet1 = &gmac0;
 	}; //end aliases
 
 	clocks {
@@ -68,7 +70,7 @@
 };
 
 &gmac0 {
-    phy-mode = "rgmii";
+    phy-mode = "gmii";
     snps,phy-addr = < 0xFFFFFFFF >;
     phy-addr = < 0xFFFFFFFF >;
 
@@ -89,7 +91,7 @@
 
 &gmac1 {
     status = "okay";
-    phy-mode = "gmii";
+    phy-mode = "rgmii";
     snps,phy-addr = < 0xFFFFFFFF >;
     phy-addr = < 0xFFFFFFFF >;
 
