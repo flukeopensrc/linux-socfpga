@@ -89,7 +89,7 @@
 };
 
 &mmc0 {
-	status = "disabled";
+	status = "okay";
 };
 
 &i2c0 {
@@ -194,10 +194,9 @@
 
         part4: partition@0 {
             label = "Flash 1 Raw Data";	/* appended from boardinfo */
-            reg = < 0x00000000 0x07000000 >;	/* appended from boardinfo */
+            reg = < 0x00000000 0x10000000 >;	/* appended from boardinfo */
         }; //end partition@0 (part4)
-    }; //end n25q00@1 (flash1)		
-
+    }; //end n25q02@1 (flash1)		
 };
 
 &uart0 {
