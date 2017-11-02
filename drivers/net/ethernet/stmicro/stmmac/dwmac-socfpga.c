@@ -196,7 +196,7 @@ static void *socfpga_dwmac_probe(struct platform_device *pdev)
 		dev_err(dev, "Unable to parse OF data\n");
 		return ERR_PTR(ret);
 	}
-
+    printk("Splitter probe function exited normally\n\n");
 	ret = socfpga_dwmac_setup(dwmac);
 	if (ret) {
 		dev_err(dev, "couldn't setup SoC glue (%d)\n", ret);
