@@ -193,7 +193,7 @@
 		cdns,tslch-ns = <4>;
 
         part4: partition@0 {
-            label = "Flash 1 Raw Data";	/* appended from boardinfo */
+            label = "Root FS (jffs2)";	/* appended from boardinfo */
             reg = < 0x00000000 0x10000000 >;	/* appended from boardinfo */
         }; //end partition@0 (part4)
     }; //end n25q02@1 (flash1)		
