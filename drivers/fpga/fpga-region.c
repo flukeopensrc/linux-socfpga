@@ -31,13 +31,19 @@
  * @dev: FPGA Region device
  * @mutex: enforces exclusive reference to region
  * @bridge_list: list of FPGA bridges specified in region
+<<<<<<< HEAD
  * @info: fpga image specific information
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
  */
 struct fpga_region {
 	struct device dev;
 	struct mutex mutex; /* for exclusive reference to region */
 	struct list_head bridge_list;
+<<<<<<< HEAD
 	struct fpga_image_info *info;
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 };
 
 #define to_fpga_region(d) container_of(d, struct fpga_region, dev)
@@ -68,8 +74,16 @@ static struct fpga_region *fpga_region_find(struct device_node *np)
 
 	dev = class_find_device(fpga_region_class, NULL, np,
 				fpga_region_of_node_match);
+<<<<<<< HEAD
 	if (!dev)
 		return NULL;
+=======
+	if (!dev) {
+		pr_err("%s did not find FPGA Region in class: %s\n", __func__,
+		       np->full_name);
+		return NULL;
+	}
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	return to_fpga_region(dev);
 }
@@ -161,7 +175,10 @@ static struct fpga_manager *fpga_region_get_manager(struct fpga_region *region)
 /**
  * fpga_region_get_bridges - create a list of bridges
  * @region: FPGA region
+<<<<<<< HEAD
  * @overlay: device node of the overlay
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
  *
  * Create a list of bridges specified by "fpga-bridges" property.
  * If no bridges are specified, list will be empty.  Note that the
@@ -173,26 +190,37 @@ static struct fpga_manager *fpga_region_get_manager(struct fpga_region *region)
  * Return 0 for success (even if there are no bridges specified)
  * or -EBUSY if any of the bridges are in use.
  */
+<<<<<<< HEAD
 static int fpga_region_get_bridges(struct fpga_region *region,
 				   struct device_node *overlay)
+=======
+static int fpga_region_get_bridges(struct fpga_region *region)
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 {
 	struct device *dev = &region->dev;
 	struct device_node *np = dev->of_node;
 	struct device_node *br_node;
 	int i, ret;
 
+<<<<<<< HEAD
 	/* If overlay has a list of bridges, use it. */
 	if (of_parse_phandle(overlay, "fpga-bridges", 0))
 		np = overlay;
 
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	for (i = 0; ; i++) {
 		br_node = of_parse_phandle(np, "fpga-bridges", i);
 		if (!br_node)
 			break;
 
 		/* If node is a bridge, get it and add to list */
+<<<<<<< HEAD
 		ret = fpga_bridge_get_to_list(br_node, region->info,
 					      &region->bridge_list);
+=======
+		ret = fpga_bridge_get_to_list(br_node, &region->bridge_list);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 		/* If any of the bridges are in use, give up */
 		if (ret == -EBUSY) {
@@ -208,19 +236,28 @@ static int fpga_region_get_bridges(struct fpga_region *region,
  * fpga_region_program_fpga - program FPGA
  * @region: FPGA region
  * @firmware_name: name of FPGA image firmware file
+<<<<<<< HEAD
  * @overlay: device node of the overlay
+=======
+ * @flags: flags for FPGA programming mode
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
  * Program an FPGA using information in the device tree.
  * Function assumes that there is a firmware-name property.
  * Return 0 for success or negative error code.
  */
 static int fpga_region_program_fpga(struct fpga_region *region,
 				    const char *firmware_name,
+<<<<<<< HEAD
 				    struct device_node *overlay)
+=======
+				    unsigned long flags)
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 {
 	struct fpga_manager *mgr;
 	int ret;
 
 	region = fpga_region_get(region);
+<<<<<<< HEAD
 	if (IS_ERR(region)) {
 		pr_err("failed to get fpga region\n");
 		return PTR_ERR(region);
@@ -255,6 +292,30 @@ static int fpga_region_program_fpga(struct fpga_region *region,
 		pr_err("failed to enable region bridges\n");
 		goto err_put_br;
 	}
+=======
+	if (IS_ERR(region))
+		return PTR_ERR(region);
+
+	mgr = fpga_region_get_manager(region);
+	if (IS_ERR(mgr))
+		return PTR_ERR(mgr);
+
+	ret = fpga_region_get_bridges(region);
+	if (ret)
+		goto err_put_mgr;
+
+	ret = fpga_bridges_disable(&region->bridge_list);
+	if (ret)
+		goto err_put_br;
+
+	ret = fpga_mgr_firmware_load(mgr, flags, firmware_name);
+	if (ret)
+		goto err_put_br;
+
+	ret = fpga_bridges_enable(&region->bridge_list);
+	if (ret)
+		goto err_put_br;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	fpga_mgr_put(mgr);
 	fpga_region_put(region);
@@ -336,6 +397,7 @@ static int fpga_region_notify_pre_apply(struct fpga_region *region,
 					struct of_overlay_notify_data *nd)
 {
 	const char *firmware_name = NULL;
+<<<<<<< HEAD
 	struct fpga_image_info *info;
 	int ret;
 
@@ -345,6 +407,11 @@ static int fpga_region_notify_pre_apply(struct fpga_region *region,
 
 	region->info = info;
 
+=======
+	unsigned long flags = 0;
+	int ret;
+
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	/* Reject overlay if child FPGA Regions have firmware-name property */
 	ret = child_regions_with_firmware(nd->overlay);
 	if (ret)
@@ -352,6 +419,7 @@ static int fpga_region_notify_pre_apply(struct fpga_region *region,
 
 	/* Read FPGA region properties from the overlay */
 	if (of_property_read_bool(nd->overlay, "partial-fpga-config"))
+<<<<<<< HEAD
 		info->flags |= FPGA_MGR_PARTIAL_RECONFIG;
 
 	if (of_property_read_bool(nd->overlay, "external-fpga-config"))
@@ -370,12 +438,27 @@ static int fpga_region_notify_pre_apply(struct fpga_region *region,
 
 	/* If FPGA was externally programmed, don't specify firmware */
 	if ((info->flags & FPGA_MGR_EXTERNAL_CONFIG) && firmware_name) {
+=======
+		flags |= FPGA_MGR_PARTIAL_RECONFIG;
+
+	if (of_property_read_bool(nd->overlay, "external-fpga-config"))
+		flags |= FPGA_MGR_EXTERNAL_CONFIG;
+
+	of_property_read_string(nd->overlay, "firmware-name", &firmware_name);
+
+	/* If FPGA was externally programmed, don't specify firmware */
+	if ((flags & FPGA_MGR_EXTERNAL_CONFIG) && firmware_name) {
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 		pr_err("error: specified firmware and external-fpga-config");
 		return -EINVAL;
 	}
 
 	/* FPGA is already configured externally.  We're done. */
+<<<<<<< HEAD
 	if (info->flags & FPGA_MGR_EXTERNAL_CONFIG)
+=======
+	if (flags & FPGA_MGR_EXTERNAL_CONFIG)
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 		return 0;
 
 	/* If we got this far, we should be programming the FPGA */
@@ -384,7 +467,11 @@ static int fpga_region_notify_pre_apply(struct fpga_region *region,
 		return -EINVAL;
 	}
 
+<<<<<<< HEAD
 	return fpga_region_program_fpga(region, firmware_name, nd->overlay);
+=======
+	return fpga_region_program_fpga(region, firmware_name, flags);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 
 /**
@@ -401,8 +488,11 @@ static void fpga_region_notify_post_remove(struct fpga_region *region,
 {
 	fpga_bridges_disable(&region->bridge_list);
 	fpga_bridges_put(&region->bridge_list);
+<<<<<<< HEAD
 	devm_kfree(&region->dev, region->info);
 	region->info = NULL;
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 
 /**

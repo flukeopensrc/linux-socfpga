@@ -4,16 +4,25 @@
 
 # Core FPGA Manager Framework
 obj-$(CONFIG_FPGA)			+= fpga-mgr.o
+<<<<<<< HEAD
 obj-$(CONFIG_FPGA_MGR_DEBUG_FS)		+= fpga-mgr-debugfs.o
 
 # FPGA Manager Drivers
 obj-$(CONFIG_FPGA_MGR_SOCFPGA)		+= socfpga.o
 obj-$(CONFIG_FPGA_MGR_SOCFPGA_A10)	+= socfpga-a10.o
+=======
+
+# FPGA Manager Drivers
+obj-$(CONFIG_FPGA_MGR_SOCFPGA)		+= socfpga.o
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 # FPGA Bridge Drivers
 obj-$(CONFIG_FPGA_BRIDGE)		+= fpga-bridge.o
 obj-$(CONFIG_SOCFPGA_FPGA_BRIDGE)	+= altera-hps2fpga.o altera-fpga2sdram.o
+<<<<<<< HEAD
 obj-$(CONFIG_ALTERA_FREEZE_BRIDGE)	+= altera-freeze-bridge.o
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 # High Level Interfaces
 obj-$(CONFIG_FPGA_REGION)		+= fpga-region.o

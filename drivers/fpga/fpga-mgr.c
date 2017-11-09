@@ -25,7 +25,10 @@
 #include <linux/of.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+<<<<<<< HEAD
 #include "fpga-mgr-debugfs.h"
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 static DEFINE_IDA(fpga_mgr_ida);
 static struct class *fpga_mgr_class;
@@ -33,12 +36,17 @@ static struct class *fpga_mgr_class;
 /**
  * fpga_mgr_buf_load - load fpga from image in buffer
  * @mgr:	fpga manager
+<<<<<<< HEAD
  * @info:	fpga image specific information
+=======
+ * @flags:	flags setting fpga confuration modes
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
  * @buf:	buffer contain fpga image
  * @count:	byte count of buf
  *
  * Step the low level fpga manager through the device-specific steps of getting
  * an FPGA ready to be configured, writing the image to it, then doing whatever
+<<<<<<< HEAD
  * post-configuration steps necessary.  This code assumes the caller got the
  * mgr pointer from of_fpga_mgr_get() and checked that it is not an error code.
  *
@@ -46,17 +54,35 @@ static struct class *fpga_mgr_class;
  */
 int fpga_mgr_buf_load(struct fpga_manager *mgr, struct fpga_image_info *info,
 		      const char *buf, size_t count)
+=======
+ * post-configuration steps necessary.
+ *
+ * Return: 0 on success, negative error code otherwise.
+ */
+int fpga_mgr_buf_load(struct fpga_manager *mgr, u32 flags, const char *buf,
+		      size_t count)
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 {
 	struct device *dev = &mgr->dev;
 	int ret;
 
+<<<<<<< HEAD
+=======
+	if (!mgr)
+		return -ENODEV;
+
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	/*
 	 * Call the low level driver's write_init function.  This will do the
 	 * device-specific things to get the FPGA into the state where it is
 	 * ready to receive an FPGA image.
 	 */
 	mgr->state = FPGA_MGR_STATE_WRITE_INIT;
+<<<<<<< HEAD
 	ret = mgr->mops->write_init(mgr, info, buf, count);
+=======
+	ret = mgr->mops->write_init(mgr, flags, buf, count);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	if (ret) {
 		dev_err(dev, "Error preparing FPGA for writing\n");
 		mgr->state = FPGA_MGR_STATE_WRITE_INIT_ERR;
@@ -79,7 +105,11 @@ int fpga_mgr_buf_load(struct fpga_manager *mgr, struct fpga_image_info *info,
 	 * steps to finish and set the FPGA into operating mode.
 	 */
 	mgr->state = FPGA_MGR_STATE_WRITE_COMPLETE;
+<<<<<<< HEAD
 	ret = mgr->mops->write_complete(mgr, info);
+=======
+	ret = mgr->mops->write_complete(mgr, flags);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	if (ret) {
 		dev_err(dev, "Error after writing image data to FPGA\n");
 		mgr->state = FPGA_MGR_STATE_WRITE_COMPLETE_ERR;
@@ -94,11 +124,16 @@ EXPORT_SYMBOL_GPL(fpga_mgr_buf_load);
 /**
  * fpga_mgr_firmware_load - request firmware and load to fpga
  * @mgr:	fpga manager
+<<<<<<< HEAD
  * @info:	fpga image specific information
+=======
+ * @flags:	flags setting fpga confuration modes
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
  * @image_name:	name of image file on the firmware search path
  *
  * Request an FPGA image using the firmware class, then write out to the FPGA.
  * Update the state before each step to provide info on what step failed if
+<<<<<<< HEAD
  * there is a failure.  This code assumes the caller got the mgr pointer
  * from of_fpga_mgr_get() and checked that it is not an error code.
  *
@@ -106,12 +141,25 @@ EXPORT_SYMBOL_GPL(fpga_mgr_buf_load);
  */
 int fpga_mgr_firmware_load(struct fpga_manager *mgr,
 			   struct fpga_image_info *info,
+=======
+ * there is a failure.
+ *
+ * Return: 0 on success, negative error code otherwise.
+ */
+int fpga_mgr_firmware_load(struct fpga_manager *mgr, u32 flags,
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 			   const char *image_name)
 {
 	struct device *dev = &mgr->dev;
 	const struct firmware *fw;
 	int ret;
 
+<<<<<<< HEAD
+=======
+	if (!mgr)
+		return -ENODEV;
+
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	dev_info(dev, "writing %s to %s\n", image_name, mgr->name);
 
 	mgr->state = FPGA_MGR_STATE_FIRMWARE_REQ;
@@ -123,11 +171,21 @@ int fpga_mgr_firmware_load(struct fpga_manager *mgr,
 		return ret;
 	}
 
+<<<<<<< HEAD
 	ret = fpga_mgr_buf_load(mgr, info, fw->data, fw->size);
 
 	release_firmware(fw);
 
 	return ret;
+=======
+	ret = fpga_mgr_buf_load(mgr, flags, fw->data, fw->size);
+	if (ret)
+		return ret;
+
+	release_firmware(fw);
+
+	return 0;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 EXPORT_SYMBOL_GPL(fpga_mgr_firmware_load);
 
@@ -200,7 +258,13 @@ struct fpga_manager *of_fpga_mgr_get(struct device_node *node)
 {
 	struct fpga_manager *mgr;
 	struct device *dev;
+<<<<<<< HEAD
 	int ret = -ENODEV;
+=======
+
+	if (!node)
+		return ERR_PTR(-EINVAL);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	dev = class_find_device(fpga_mgr_class, NULL, node,
 				fpga_mgr_of_node_match);
@@ -208,6 +272,7 @@ struct fpga_manager *of_fpga_mgr_get(struct device_node *node)
 		return ERR_PTR(-ENODEV);
 
 	mgr = to_fpga_manager(dev);
+<<<<<<< HEAD
 	if (!mgr)
 		goto err_dev;
 
@@ -227,6 +292,22 @@ err_ll_mod:
 err_dev:
 	put_device(dev);
 	return ERR_PTR(ret);
+=======
+	put_device(dev);
+	if (!mgr)
+		return ERR_PTR(-ENODEV);
+
+	/* Get exclusive use of fpga manager */
+	if (!mutex_trylock(&mgr->ref_mutex))
+		return ERR_PTR(-EBUSY);
+
+	if (!try_module_get(THIS_MODULE)) {
+		mutex_unlock(&mgr->ref_mutex);
+		return ERR_PTR(-ENODEV);
+	}
+
+	return mgr;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 EXPORT_SYMBOL_GPL(of_fpga_mgr_get);
 
@@ -236,9 +317,16 @@ EXPORT_SYMBOL_GPL(of_fpga_mgr_get);
  */
 void fpga_mgr_put(struct fpga_manager *mgr)
 {
+<<<<<<< HEAD
 	module_put(mgr->dev.parent->driver->owner);
 	mutex_unlock(&mgr->ref_mutex);
 	put_device(&mgr->dev);
+=======
+	if (mgr) {
+		module_put(THIS_MODULE);
+		mutex_unlock(&mgr->ref_mutex);
+	}
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 EXPORT_SYMBOL_GPL(fpga_mgr_put);
 
@@ -256,6 +344,10 @@ int fpga_mgr_register(struct device *dev, const char *name,
 		      void *priv)
 {
 	struct fpga_manager *mgr;
+<<<<<<< HEAD
+=======
+	const char *dt_label;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	int id, ret;
 
 	if (!mops || !mops->write_init || !mops->write ||
@@ -299,16 +391,27 @@ int fpga_mgr_register(struct device *dev, const char *name,
 	mgr->dev.id = id;
 	dev_set_drvdata(dev, mgr);
 
+<<<<<<< HEAD
 	ret = dev_set_name(&mgr->dev, "fpga%d", id);
 	if (ret)
 		goto error_device;
+=======
+	dt_label = of_get_property(mgr->dev.of_node, "label", NULL);
+	if (dt_label)
+		ret = dev_set_name(&mgr->dev, "%s", dt_label);
+	else
+		ret = dev_set_name(&mgr->dev, "fpga%d", id);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	ret = device_add(&mgr->dev);
 	if (ret)
 		goto error_device;
 
+<<<<<<< HEAD
 	fpga_mgr_debugfs_add(mgr);
 
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	dev_info(&mgr->dev, "%s registered\n", mgr->name);
 
 	return 0;
@@ -332,8 +435,11 @@ void fpga_mgr_unregister(struct device *dev)
 
 	dev_info(&mgr->dev, "%s %s\n", __func__, mgr->name);
 
+<<<<<<< HEAD
 	fpga_mgr_debugfs_remove(mgr);
 
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	/*
 	 * If the low level driver provides a method for putting fpga into
 	 * a desired state upon unregister, do it.
@@ -364,14 +470,20 @@ static int __init fpga_mgr_class_init(void)
 	fpga_mgr_class->dev_groups = fpga_mgr_groups;
 	fpga_mgr_class->dev_release = fpga_mgr_dev_release;
 
+<<<<<<< HEAD
 	fpga_mgr_debugfs_init();
 
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	return 0;
 }
 
 static void __exit fpga_mgr_class_exit(void)
 {
+<<<<<<< HEAD
 	fpga_mgr_debugfs_uninit();
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	class_destroy(fpga_mgr_class);
 	ida_destroy(&fpga_mgr_ida);
 }

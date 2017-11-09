@@ -407,14 +407,22 @@ static int socfpga_fpga_reset(struct fpga_manager *mgr)
 /*
  * Prepare the FPGA to receive the configuration data.
  */
+<<<<<<< HEAD
 static int socfpga_fpga_ops_configure_init(struct fpga_manager *mgr,
 					   struct fpga_image_info *info,
+=======
+static int socfpga_fpga_ops_configure_init(struct fpga_manager *mgr, u32 flags,
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 					   const char *buf, size_t count)
 {
 	struct socfpga_fpga_priv *priv = mgr->priv;
 	int ret;
 
+<<<<<<< HEAD
 	if (info->flags & FPGA_MGR_PARTIAL_RECONFIG) {
+=======
+	if (flags & FPGA_MGR_PARTIAL_RECONFIG) {
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 		dev_err(&mgr->dev, "Partial reconfiguration not supported.\n");
 		return -EINVAL;
 	}
@@ -479,7 +487,11 @@ static int socfpga_fpga_ops_configure_write(struct fpga_manager *mgr,
 }
 
 static int socfpga_fpga_ops_configure_complete(struct fpga_manager *mgr,
+<<<<<<< HEAD
 					       struct fpga_image_info *info)
+=======
+					       u32 flags)
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 {
 	struct socfpga_fpga_priv *priv = mgr->priv;
 	u32 status;
@@ -578,7 +590,11 @@ static int socfpga_fpga_probe(struct platform_device *pdev)
 
 	ret = devm_request_irq(dev, priv->irq, socfpga_fpga_isr, 0,
 			       dev_name(dev), priv);
+<<<<<<< HEAD
 	if (ret)
+=======
+	if (IS_ERR_VALUE(ret))
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 		return ret;
 
 	return fpga_mgr_register(dev, "Altera SOCFPGA FPGA Manager",

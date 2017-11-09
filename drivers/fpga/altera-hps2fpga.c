@@ -34,7 +34,10 @@
 #include <linux/of_platform.h>
 #include <linux/regmap.h>
 #include <linux/reset.h>
+<<<<<<< HEAD
 #include <linux/spinlock.h>
+=======
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 #define ALT_L3_REMAP_OFST			0x0
 #define ALT_L3_REMAP_MPUZERO_MSK		0x00000001
@@ -49,6 +52,11 @@ struct altera_hps2fpga_data {
 	const char *name;
 	struct reset_control *bridge_reset;
 	struct regmap *l3reg;
+<<<<<<< HEAD
+=======
+	/* The L3 REMAP register is write only, so keep a cached value. */
+	unsigned int l3_remap_value;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	unsigned int remap_mask;
 	struct clk *clk;
 };
@@ -60,6 +68,7 @@ static int alt_hps2fpga_enable_show(struct fpga_bridge *bridge)
 	return reset_control_status(priv->bridge_reset);
 }
 
+<<<<<<< HEAD
 /* The L3 REMAP register is write only, so keep a cached value. */
 static unsigned int l3_remap_shadow;
 static spinlock_t l3_remap_lock;
@@ -68,6 +77,11 @@ static int _alt_hps2fpga_enable_set(struct altera_hps2fpga_data *priv,
 				    bool enable)
 {
 	unsigned long flags;
+=======
+static int _alt_hps2fpga_enable_set(struct altera_hps2fpga_data *priv,
+				    bool enable)
+{
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	int ret;
 
 	/* bring bridge out of reset */
@@ -80,6 +94,7 @@ static int _alt_hps2fpga_enable_set(struct altera_hps2fpga_data *priv,
 
 	/* Allow bridge to be visible to L3 masters or not */
 	if (priv->remap_mask) {
+<<<<<<< HEAD
 		spin_lock_irqsave(&l3_remap_lock, flags);
 		l3_remap_shadow |= ALT_L3_REMAP_MPUZERO_MSK;
 
@@ -91,6 +106,17 @@ static int _alt_hps2fpga_enable_set(struct altera_hps2fpga_data *priv,
 		ret = regmap_write(priv->l3reg, ALT_L3_REMAP_OFST,
 				   l3_remap_shadow);
 		spin_unlock_irqrestore(&l3_remap_lock, flags);
+=======
+		priv->l3_remap_value |= ALT_L3_REMAP_MPUZERO_MSK;
+
+		if (enable)
+			priv->l3_remap_value |= priv->remap_mask;
+		else
+			priv->l3_remap_value &= ~priv->remap_mask;
+
+		ret = regmap_write(priv->l3reg, ALT_L3_REMAP_OFST,
+				   priv->l3_remap_value);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	}
 
 	return ret;
@@ -147,6 +173,7 @@ static int alt_fpga_bridge_probe(struct platform_device *pdev)
 		return PTR_ERR(priv->bridge_reset);
 	}
 
+<<<<<<< HEAD
 	if (priv->remap_mask) {
 		priv->l3reg = syscon_regmap_lookup_by_compatible("altr,l3regs");
 		if (IS_ERR(priv->l3reg)) {
@@ -156,6 +183,15 @@ static int alt_fpga_bridge_probe(struct platform_device *pdev)
 	}
 
 	priv->clk = devm_clk_get(dev, NULL);
+=======
+	priv->l3reg = syscon_regmap_lookup_by_compatible("altr,l3regs");
+	if (IS_ERR(priv->l3reg)) {
+		dev_err(dev, "regmap for altr,l3regs lookup failed\n");
+		return PTR_ERR(priv->l3reg);
+	}
+
+	priv->clk = of_clk_get(dev->of_node, 0);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 	if (IS_ERR(priv->clk)) {
 		dev_err(dev, "no clock specified\n");
 		return PTR_ERR(priv->clk);
@@ -167,7 +203,14 @@ static int alt_fpga_bridge_probe(struct platform_device *pdev)
 		return -EBUSY;
 	}
 
+<<<<<<< HEAD
 	spin_lock_init(&l3_remap_lock);
+=======
+	ret = fpga_bridge_register(dev, priv->name, &altera_hps2fpga_br_ops,
+				   priv);
+	if (ret)
+		return ret;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	if (!of_property_read_u32(dev->of_node, "bridge-enable", &enable)) {
 		if (enable > 1) {
@@ -184,8 +227,12 @@ static int alt_fpga_bridge_probe(struct platform_device *pdev)
 		}
 	}
 
+<<<<<<< HEAD
 	return fpga_bridge_register(dev, priv->name, &altera_hps2fpga_br_ops,
 				    priv);
+=======
+	return ret;
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 
 static int alt_fpga_bridge_remove(struct platform_device *pdev)
@@ -196,6 +243,10 @@ static int alt_fpga_bridge_remove(struct platform_device *pdev)
 	fpga_bridge_unregister(&pdev->dev);
 
 	clk_disable_unprepare(priv->clk);
+<<<<<<< HEAD
+=======
+	clk_put(priv->clk);
+>>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	return 0;
 }
