@@ -116,6 +116,7 @@ struct uart_8250_port {
 	unsigned char		msr_saved_flags;
 
 	struct uart_8250_dma	*dma;
+	unsigned int fast_uart	:1;
 	const struct uart_8250_ops *ops;
 
 	/* 8250 specific callbacks */

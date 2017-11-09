@@ -14,6 +14,7 @@
 #include <linux/dma-mapping.h>
 
 #include "8250.h"
+static unsigned char recieve_interrupt_enable = 5;
 
 static void __dma_tx_complete(void *param)
 {
@@ -65,7 +66,11 @@ static void __dma_rx_complete(void *param)
 	tty_insert_flip_string(tty_port, dma->rx_buf, count);
 	p->port.icount.rx += count;
 
-	tty_flip_buffer_push(tty_port);
+	tty_flip_buffer_push(tty_port);	
+	
+	/*Joseph: Enable the interrupts after the completion of copying*/
+	p->ier |= recieve_interrupt_enable;
+	serial_out(p, UART_IER, p->ier);
 }
 
 int serial8250_tx_dma(struct uart_8250_port *p)
@@ -117,6 +122,13 @@ int serial8250_rx_dma(struct uart_8250_port *p, unsigned int iir)
 {
 	struct uart_8250_dma		*dma = p->dma;
 	struct dma_async_tx_descriptor	*desc;
+	
+	/*Disable all interrupts if Watermark/Timeout interrupt is recieved*/
+	p->ier &= (~recieve_interrupt_enable);
+	serial_out(p, UART_IER, p->ier);
+	
+	/* Joseph : Read the FIFO level and set the packet size according to that. */
+	dma->rx_size = read_fifo_level(&(p->port));
 
 	switch (iir & 0x3f) {
 	case UART_IIR_RLSI:
@@ -131,8 +143,11 @@ int serial8250_rx_dma(struct uart_8250_port *p, unsigned int iir)
 			dmaengine_pause(dma->rxchan);
 			__dma_rx_complete(p);
 			dmaengine_terminate_all(dma->rxchan);
+			/* Joseph : Timeout error will be occured when there is some data in register.
+			 *  But if the dma is not in progress, we want the DMA to be used for data transfer.
+			 */
+			return -ETIMEDOUT;
 		}
-		return -ETIMEDOUT;
 	default:
 		break;
 	}
@@ -142,7 +157,7 @@ int serial8250_rx_dma(struct uart_8250_port *p, unsigned int iir)
 
 	desc = dmaengine_prep_slave_single(dma->rxchan, dma->rx_addr,
 					   dma->rx_size, DMA_DEV_TO_MEM,
-					   DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+					   DMA_PREP_INTERRUPT | DMA_CTRL_ACK | DMA_SINGLE_TRANSFER_REQ);
 	if (!desc)
 		return -EBUSY;
 
@@ -164,15 +179,19 @@ int serial8250_request_dma(struct uart_8250_port *p)
 {
 	struct uart_8250_dma	*dma = p->dma;
 	dma_cap_mask_t		mask;
+	
+	printk(KERN_INFO "*** FAST UART with DMA v0.2.00  compiled at : 11:00, 3 Oct 2016 ***\n");
 
 	/* Default slave configuration parameters */
 	dma->rxconf.direction		= DMA_DEV_TO_MEM;
 	dma->rxconf.src_addr_width	= DMA_SLAVE_BUSWIDTH_1_BYTE;
 	dma->rxconf.src_addr		= p->port.mapbase + UART_RX;
+	dma->rxconf.src_maxburst 	= 1;
 
 	dma->txconf.direction		= DMA_MEM_TO_DEV;
 	dma->txconf.dst_addr_width	= DMA_SLAVE_BUSWIDTH_1_BYTE;
 	dma->txconf.dst_addr		= p->port.mapbase + UART_TX;
+	dma->txconf.dst_maxburst 	= 1;
 
 	dma_cap_zero(mask);
 	dma_cap_set(DMA_SLAVE, mask);
@@ -237,8 +256,12 @@ void serial8250_release_dma(struct uart_8250_port *p)
 
 	/* Release RX resources */
 	dmaengine_terminate_all(dma->rxchan);
-	dma_free_coherent(dma->rxchan->device->dev, dma->rx_size, dma->rx_buf,
-			  dma->rx_addr);
+	/* Joseph : dma->rx_buf has been replaced with PAGE_SIZE as the number of bytes allocated
+	 * by dma initially in the request DMA function is PAGE_SIZE while the dma->rx_buf size
+	 * varies according the fifo-size level.
+	 */
+	dma_free_coherent(dma->rxchan->device->dev, PAGE_SIZE, dma->rx_buf,
+ 			  dma->rx_addr);
 	dma_release_channel(dma->rxchan);
 	dma->rxchan = NULL;
 
