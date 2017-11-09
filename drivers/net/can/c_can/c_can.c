@@ -332,9 +332,10 @@ static void c_can_setup_tx_object(struct net_device *dev, int iface,
 
 	priv->write_reg(priv, C_CAN_IFACE(MSGCTRL_REG, iface), ctrl);
 
-	for (i = 0; i < frame->can_dlc; i += 2) {
-		priv->write_reg(priv, C_CAN_IFACE(DATA1_REG, iface) + i / 2,
-				frame->data[i] | (frame->data[i + 1] << 8));
+	for (i = 0; i < frame->can_dlc; i += 4) {
+		priv->write_reg32(priv, C_CAN_IFACE(DATA1_REG, iface) + i / 2,
+				frame->data[i] | (frame->data[i + 1] << 8)
+				| (frame->data[i + 2] << 16) | (frame->data[i + 3] << 24));
 	}
 }
 
@@ -402,10 +403,12 @@ static int c_can_read_msg_object(struct net_device *dev, int iface, u32 ctrl)
 	} else {
 		int i, dreg = C_CAN_IFACE(DATA1_REG, iface);
 
-		for (i = 0; i < frame->can_dlc; i += 2, dreg ++) {
-			data = priv->read_reg(priv, dreg);
+		for (i = 0; i < frame->can_dlc; i += 4, dreg += 2) {
+			data = priv->read_reg32(priv, dreg);
 			frame->data[i] = data;
 			frame->data[i + 1] = data >> 8;
+			frame->data[i + 2] = data >> 16;
+			frame->data[i + 3] = data >> 24;
 		}
 	}
 
