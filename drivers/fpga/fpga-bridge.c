@@ -74,22 +74,15 @@ EXPORT_SYMBOL_GPL(fpga_bridge_disable);
  * of_fpga_bridge_get - get an exclusive reference to a fpga bridge
  *
  * @np: node pointer of a FPGA bridge
-<<<<<<< HEAD
  * @info: fpga image specific information
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
  *
  * Return fpga_bridge struct if successful.
  * Return -EBUSY if someone already has a reference to the bridge.
  * Return -ENODEV if @np is not a FPGA Bridge.
  */
-<<<<<<< HEAD
 struct fpga_bridge *of_fpga_bridge_get(struct device_node *np,
 				       struct fpga_image_info *info)
 
-=======
-struct fpga_bridge *of_fpga_bridge_get(struct device_node *np)
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 {
 	struct device *dev;
 	struct fpga_bridge *bridge;
@@ -106,11 +99,8 @@ struct fpga_bridge *of_fpga_bridge_get(struct device_node *np)
 	if (!bridge)
 		goto err_dev;
 
-<<<<<<< HEAD
 	bridge->info = info;
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	if (!mutex_trylock(&bridge->mutex)) {
 		ret = -EBUSY;
 		goto err_dev;
@@ -141,10 +131,7 @@ void fpga_bridge_put(struct fpga_bridge *bridge)
 {
 	dev_dbg(&bridge->dev, "put\n");
 
-<<<<<<< HEAD
 	bridge->info = NULL;
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	module_put(bridge->dev.parent->driver->owner);
 	mutex_unlock(&bridge->mutex);
 	put_device(&bridge->dev);
@@ -232,10 +219,7 @@ EXPORT_SYMBOL_GPL(fpga_bridges_put);
  * fpga_bridges_get_to_list - get a bridge, add it to a list
  *
  * @np: node pointer of a FPGA bridge
-<<<<<<< HEAD
  * @info: fpga image specific information
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
  * @bridge_list: list of FPGA bridges
  *
  * Get an exclusive reference to the bridge and and it to the list.
@@ -243,20 +227,13 @@ EXPORT_SYMBOL_GPL(fpga_bridges_put);
  * Return 0 for success, error code from of_fpga_bridge_get() othewise.
  */
 int fpga_bridge_get_to_list(struct device_node *np,
-<<<<<<< HEAD
 			    struct fpga_image_info *info,
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 			    struct list_head *bridge_list)
 {
 	struct fpga_bridge *bridge;
 	unsigned long flags;
 
-<<<<<<< HEAD
 	bridge = of_fpga_bridge_get(np, info);
-=======
-	bridge = of_fpga_bridge_get(np);
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	if (IS_ERR(bridge))
 		return PTR_ERR(bridge);
 
