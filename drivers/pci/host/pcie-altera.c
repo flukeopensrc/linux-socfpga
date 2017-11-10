@@ -43,10 +43,7 @@
 #define RP_LTSSM_MASK			0x1f
 #define LTSSM_L0			0xf
 
-<<<<<<< HEAD
 #define PCIE_CAP_OFFSET			0x80
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 /* TLP configuration type 0 and 1 */
 #define TLP_FMTTYPE_CFGRD0		0x04	/* Configuration Read Type 0 */
 #define TLP_FMTTYPE_CFGWR0		0x44	/* Configuration Write Type 0 */
@@ -65,12 +62,9 @@
 #define TLP_LOOP			500
 #define RP_DEVFN			0
 
-<<<<<<< HEAD
 #define LINK_UP_TIMEOUT			HZ
 #define LINK_RETRAIN_TIMEOUT		HZ
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 #define INTX_NUM			4
 
 #define DWORD_MASK			3
@@ -101,7 +95,6 @@ struct irq_domain *arch_get_pci_msi_domain(struct pci_dev *dev)
 }
 #endif /* CONFIG_PCI_MSI */
 
-<<<<<<< HEAD
 static inline void cra_writel(struct altera_pcie *pcie, const u32 value,
 			      const u32 reg)
 {
@@ -117,27 +110,6 @@ static bool altera_pcie_link_is_up(struct altera_pcie *pcie)
 {
 	return !!((cra_readl(pcie, RP_LTSSM) & RP_LTSSM_MASK) == LTSSM_L0);
 }
-=======
-static void altera_pcie_retrain(struct pci_dev *dev)
-{
-	u16 linkcap, linkstat;
-
-	/*
-	 * Set the retrain bit if the PCIe rootport support > 2.5GB/s, but
-	 * current speed is 2.5 GB/s.
-	 */
-	pcie_capability_read_word(dev, PCI_EXP_LNKCAP, &linkcap);
-
-	if ((linkcap & PCI_EXP_LNKCAP_SLS) <= PCI_EXP_LNKCAP_SLS_2_5GB)
-		return;
-
-	pcie_capability_read_word(dev, PCI_EXP_LNKSTA, &linkstat);
-	if ((linkstat & PCI_EXP_LNKSTA_CLS) == PCI_EXP_LNKSTA_CLS_2_5GB)
-		pcie_capability_set_word(dev, PCI_EXP_LNKCTL,
-					 PCI_EXP_LNKCTL_RL);
-}
-DECLARE_PCI_FIXUP_EARLY(0x1172, PCI_ANY_ID, altera_pcie_retrain);
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 /*
  * Altera PCIe port uses BAR0 of RC's configuration space as the translation
@@ -158,20 +130,6 @@ static bool altera_pcie_hide_rc_bar(struct pci_bus *bus, unsigned int  devfn,
 	return false;
 }
 
-<<<<<<< HEAD
-=======
-static inline void cra_writel(struct altera_pcie *pcie, const u32 value,
-			      const u32 reg)
-{
-	writel_relaxed(value, pcie->cra_base + reg);
-}
-
-static inline u32 cra_readl(struct altera_pcie *pcie, const u32 reg)
-{
-	return readl_relaxed(pcie->cra_base + reg);
-}
-
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 static void tlp_write_tx(struct altera_pcie *pcie,
 			 struct tlp_rp_regpair_t *tlp_rp_regdata)
 {
@@ -180,14 +138,6 @@ static void tlp_write_tx(struct altera_pcie *pcie,
 	cra_writel(pcie, tlp_rp_regdata->ctrl, RP_TX_CNTRL);
 }
 
-<<<<<<< HEAD
-=======
-static bool altera_pcie_link_is_up(struct altera_pcie *pcie)
-{
-	return !!((cra_readl(pcie, RP_LTSSM) & RP_LTSSM_MASK) == LTSSM_L0);
-}
-
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 static bool altera_pcie_valid_config(struct altera_pcie *pcie,
 				     struct pci_bus *bus, int dev)
 {
@@ -331,32 +281,14 @@ static int tlp_cfg_dword_write(struct altera_pcie *pcie, u8 bus, u32 devfn,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-<<<<<<< HEAD
 static int _altera_pcie_cfg_read(struct altera_pcie *pcie, u8 busno,
 				 unsigned int devfn, int where, int size,
 				 u32 *value)
 {
-=======
-static int altera_pcie_cfg_read(struct pci_bus *bus, unsigned int devfn,
-				int where, int size, u32 *value)
-{
-	struct altera_pcie *pcie = bus->sysdata;
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	int ret;
 	u32 data;
 	u8 byte_en;
 
-<<<<<<< HEAD
-=======
-	if (altera_pcie_hide_rc_bar(bus, devfn, where))
-		return PCIBIOS_BAD_REGISTER_NUMBER;
-
-	if (!altera_pcie_valid_config(pcie, bus, PCI_SLOT(devfn))) {
-		*value = 0xffffffff;
-		return PCIBIOS_DEVICE_NOT_FOUND;
-	}
-
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	switch (size) {
 	case 1:
 		byte_en = 1 << (where & 3);
@@ -369,11 +301,7 @@ static int altera_pcie_cfg_read(struct pci_bus *bus, unsigned int devfn,
 		break;
 	}
 
-<<<<<<< HEAD
 	ret = tlp_cfg_dword_read(pcie, busno, devfn,
-=======
-	ret = tlp_cfg_dword_read(pcie, bus->number, devfn,
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 				 (where & ~DWORD_MASK), byte_en, &data);
 	if (ret != PCIBIOS_SUCCESSFUL)
 		return ret;
@@ -393,30 +321,14 @@ static int altera_pcie_cfg_read(struct pci_bus *bus, unsigned int devfn,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-<<<<<<< HEAD
 static int _altera_pcie_cfg_write(struct altera_pcie *pcie, u8 busno,
 				  unsigned int devfn, int where, int size,
 				  u32 value)
 {
-=======
-static int altera_pcie_cfg_write(struct pci_bus *bus, unsigned int devfn,
-				 int where, int size, u32 value)
-{
-	struct altera_pcie *pcie = bus->sysdata;
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	u32 data32;
 	u32 shift = 8 * (where & 3);
 	u8 byte_en;
 
-<<<<<<< HEAD
-=======
-	if (altera_pcie_hide_rc_bar(bus, devfn, where))
-		return PCIBIOS_BAD_REGISTER_NUMBER;
-
-	if (!altera_pcie_valid_config(pcie, bus, PCI_SLOT(devfn)))
-		return PCIBIOS_DEVICE_NOT_FOUND;
-
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 	switch (size) {
 	case 1:
 		data32 = (value & 0xff) << shift;
@@ -432,7 +344,6 @@ static int altera_pcie_cfg_write(struct pci_bus *bus, unsigned int devfn,
 		break;
 	}
 
-<<<<<<< HEAD
 	return tlp_cfg_dword_write(pcie, busno, devfn, (where & ~DWORD_MASK),
 				   byte_en, data32);
 }
@@ -467,10 +378,6 @@ static int altera_pcie_cfg_write(struct pci_bus *bus, unsigned int devfn,
 
 	return _altera_pcie_cfg_write(pcie, bus->number, devfn, where, size,
 				     value);
-=======
-	return tlp_cfg_dword_write(pcie, bus->number, devfn,
-		(where & ~DWORD_MASK), byte_en, data32);
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 }
 
 static struct pci_ops altera_pcie_ops = {
@@ -478,7 +385,6 @@ static struct pci_ops altera_pcie_ops = {
 	.write = altera_pcie_cfg_write,
 };
 
-<<<<<<< HEAD
 static int altera_read_cap_word(struct altera_pcie *pcie, u8 busno,
 				unsigned int devfn, int offset, u16 *value)
 {
@@ -563,8 +469,6 @@ static void altera_pcie_retrain(struct altera_pcie *pcie)
 	}
 }
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 static int altera_pcie_intx_map(struct irq_domain *domain, unsigned int irq,
 				irq_hw_number_t hwirq)
 {
@@ -718,14 +622,11 @@ static int altera_pcie_msi_enable(struct altera_pcie *pcie)
 	return 0;
 }
 
-<<<<<<< HEAD
 static void altera_pcie_host_init(struct altera_pcie *pcie)
 {
 	altera_pcie_retrain(pcie);
 }
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 static int altera_pcie_probe(struct platform_device *pdev)
 {
 	struct altera_pcie *pcie;
@@ -763,10 +664,7 @@ static int altera_pcie_probe(struct platform_device *pdev)
 	cra_writel(pcie, P2A_INT_STS_ALL, P2A_INT_STATUS);
 	/* enable all interrupts */
 	cra_writel(pcie, P2A_INT_ENA_ALL, P2A_INT_ENABLE);
-<<<<<<< HEAD
 	altera_pcie_host_init(pcie);
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 
 	bus = pci_scan_root_bus(&pdev->dev, pcie->root_bus_nr, &altera_pcie_ops,
 				pcie, &pcie->resources);
