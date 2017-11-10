@@ -521,15 +521,12 @@ config ALTERA_HWMUTEX
 	  This option enables device driver support for Altera Hardware Mutex.
 	  Say Y here if you want to use the Altera hardware mutex support.
 
-<<<<<<< HEAD
-=======
 config ALTERA_INTTIMER
 	tristate "Altera interval timer"
 	help
 	  This enables generic support for an Altera interval timer.
 	  Say Y here if you want to use an Altera interval timer.
 
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 config ALTERA_SYSID
 	tristate "Altera System ID"
 	help
