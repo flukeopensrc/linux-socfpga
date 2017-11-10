@@ -11,7 +11,6 @@ config FPGA
 	  kernel.  The FPGA framework adds a FPGA manager class and FPGA
 	  manager drivers.
 
-<<<<<<< HEAD
 config FPGA_MGR_DEBUG_FS
        bool "FPGA Manager DebugFS"
        depends on FPGA && DEBUG_FS
@@ -19,8 +18,6 @@ config FPGA_MGR_DEBUG_FS
          Say Y here if you want to expose a DebugFS interface for the
 	 FPGA Manager Framework.
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 if FPGA
 
 config FPGA_REGION
@@ -36,15 +33,12 @@ config FPGA_MGR_SOCFPGA
 	help
 	  FPGA manager driver support for Altera SOCFPGA.
 
-<<<<<<< HEAD
 config FPGA_MGR_SOCFPGA_A10
 	tristate "Altera SoCFPGA Arria10"
 	depends on ARCH_SOCFPGA
 	help
 	  FPGA manager driver support for Altera Arria10 SoCFPGA.
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 config FPGA_BRIDGE
        bool "FPGA Bridge Framework"
        depends on OF
@@ -59,7 +53,6 @@ config SOCFPGA_FPGA_BRIDGE
 	  Say Y to enable drivers for FPGA bridges for Altera SOCFPGA
 	  devices.
 
-<<<<<<< HEAD
 config ALTERA_FREEZE_BRIDGE
         bool "Altera FPGA Freeze Bridge"
 	depends on ARCH_SOCFPGA && FPGA_BRIDGE
@@ -69,8 +62,6 @@ config ALTERA_FREEZE_BRIDGE
 	  isolate one region of the FPGA from the busses while that
 	  region is being reprogrammed.
 
-=======
->>>>>>> socfpga-4.1-ltsi-fluke-cda
 endif # FPGA
 
 endmenu
