@@ -140,10 +140,10 @@
 &qspi {
 
     status = "okay";
-    flash0: n25q00@0 {
+    flash0: n25q512@0 {
         #address-cells = <1>;
         #size-cells = <1>;
-        compatible = "n25q00";
+        compatible = "n25q512a";
         reg = <0>;      /* chip select */
         spi-max-frequency = <50000000>;
 
