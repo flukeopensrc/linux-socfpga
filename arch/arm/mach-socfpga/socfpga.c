@@ -28,6 +28,9 @@
 #include <asm/cacheflush.h>
 
 #include "core.h"
+#include "l2_cache.h"
+#include "ocram.h"
+#include "nand.h"
 
 void __iomem *sys_manager_base_addr;
 void __iomem *rst_manager_base_addr;

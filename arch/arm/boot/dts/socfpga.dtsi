@@ -694,7 +694,7 @@
 		};
 
 		L2: l2-cache@fffef000 {
-			compatible = "arm,pl310-cache";
+			compatible = "arm,pl310-cache", "syscon";
 			reg = <0xfffef000 0x1000>;
 			interrupts = <0 38 0x04>;
 			cache-unified;
@@ -774,7 +774,7 @@
 				<0xffa00000 0x1000>;
 			interrupts = <0 151 4>;
 			clocks = <&qspi_clk>;
-			is-decoded-cs = <1>;
+			is-decoded-cs = <0>;
 			fifo-depth = <128>;
 			status = "disabled";
 			m25p,fast-read;
