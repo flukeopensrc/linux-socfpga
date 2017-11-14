@@ -521,6 +521,7 @@ struct dma_pl330_desc {
 
 struct _xfer_spec {
 	u32 ccr;
+	enum dma_ctrl_flags flags;		//Joseph : To control the instructions
 	struct dma_pl330_desc *desc;
 };
 
@@ -1145,10 +1146,17 @@ static inline int _ldst_devtomem(unsigned dry_run, u8 buf[],
 	int off = 0;
 
 	while (cyc--) {
-		off += _emit_WFP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
-		off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
-		off += _emit_ST(dry_run, &buf[off], ALWAYS);
-		off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
+		// Joseph: Comenting out for transferring whole 80 bytes with one request
+		if (pxs->flags & DMA_SINGLE_TRANSFER_REQ) {
+			off += _emit_LD(dry_run, &buf[off], ALWAYS);
+			off += _emit_ST(dry_run, &buf[off], ALWAYS);
+		} else {
+			off += _emit_WFP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+			off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+			off += _emit_ST(dry_run, &buf[off], ALWAYS);
+			off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
+		}
+		
 	}
 
 	return off;
@@ -1293,15 +1301,34 @@ static inline int _setup_xfer(unsigned dry_run, u8 buf[],
 {
 	struct pl330_xfer *x = &pxs->desc->px;
 	int off = 0;
+	unsigned long bursts;
 
 	/* DMAMOV SAR, x->src_addr */
 	off += _emit_MOV(dry_run, &buf[off], SAR, x->src_addr);
 	/* DMAMOV DAR, x->dst_addr */
 	off += _emit_MOV(dry_run, &buf[off], DAR, x->dst_addr);
 
+	// Joseph: Decrementing one so that the request will be required once per transfer
+	if (pxs->flags & DMA_SINGLE_TRANSFER_REQ) {
+		if(dry_run == 0)	{
+			bursts = BYTE_TO_BURST(x->bytes, pxs->ccr);
+			if (bursts)
+				bursts--;
+
+			x->bytes = BURST_TO_BYTE(bursts, pxs->ccr);
+		}
+	}
+	
 	/* Setup Loop(s) */
 	off += _setup_loops(dry_run, &buf[off], pxs);
 
+	//Joseph: Final instruction set for providing the ACK after transfering the complete data
+	if (pxs->flags & DMA_SINGLE_TRANSFER_REQ) {
+		off += _emit_LDP(dry_run, &buf[off], ALWAYS, pxs->desc->peri);
+		off += _emit_ST(dry_run, &buf[off], ALWAYS);
+		off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
+	}
+	
 	return off;
 }
 
@@ -1419,6 +1446,7 @@ static int pl330_submit_req(struct pl330_thread *thrd,
 
 	xs.ccr = ccr;
 	xs.desc = desc;
+	xs.flags = desc->txd.flags;
 
 	/* First dry run to check if req is acceptable */
 	ret = _setup_req(1, thrd, idx, &xs);

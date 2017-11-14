@@ -46,6 +46,7 @@
 #include <asm/irq.h>
 
 #include "8250.h"
+#include "ioctl_8250_fast_uart.h"
 
 /*
  * Configuration:
@@ -97,6 +98,13 @@ static unsigned int skip_txen_test; /* force skip of txen test at init time */
  * files have been cleaned.
  */
 #define CONFIG_HUB6 1
+//FAST UART Registers locations
+#define UART_FIFO_LSB          	0x20
+#define UART_FIFO_MSB          	0x24
+#define UART_WATERMARK_LSB     	0x28
+#define UART_WATERMARK_MSB     	0x2C
+#define UART_TIMEOUT_LSB		0x30
+#define UART_TIMEOUT_MSB		0x34
 
 #include <asm/serial.h>
 /*
@@ -480,6 +488,69 @@ static void io_serial_out(struct uart_port *p, int offset, int value)
 {
 	offset = offset << p->regshift;
 	outb(value, p->iobase + offset);
+}
+
+unsigned int read_watermark(struct uart_port *port)
+{
+	unsigned int watermark_level = 0;
+	watermark_level = readl(port->membase + UART_WATERMARK_MSB);
+	watermark_level = (watermark_level & 0x1F) << 8;
+	watermark_level |= readl(port->membase + UART_WATERMARK_LSB);
+	return watermark_level;
+}
+EXPORT_SYMBOL(read_watermark);
+
+static unsigned int read_timeout(struct uart_port *port)
+{
+	unsigned int timeout = 0;
+	timeout = readl(port->membase + UART_TIMEOUT_MSB);
+	timeout = (timeout & 0xFF) << 8;
+	timeout |= readl(port->membase + UART_TIMEOUT_LSB);
+	return timeout;
+}
+
+int read_fifo_level(struct uart_port *port)
+{
+	int fifo_level = 0;
+	fifo_level = readl(port->membase + UART_FIFO_MSB);
+	fifo_level = (fifo_level & 0x1F) << 8;
+	fifo_level |= readl(port->membase + UART_FIFO_LSB);
+	return fifo_level;
+}
+EXPORT_SYMBOL(read_fifo_level);
+
+static int write_timeout(struct uart_port *port, int timeout)
+{
+	if(timeout <= 0)
+		return -1;
+	writel((timeout & 0xFF00) >> 8, port->membase + UART_TIMEOUT_MSB);
+	writel(timeout & 0xFF, port->membase + UART_TIMEOUT_LSB);
+	return 0;
+}
+
+static int write_watermark(struct uart_port *port, unsigned long watermark_level)
+{
+	if(watermark_level > 0x2000)
+		return -1;
+	writel((watermark_level & 0xFF00) >> 8, port->membase + UART_WATERMARK_MSB);
+	writel(watermark_level & 0xFF, port->membase + UART_WATERMARK_LSB);
+	return 0;
+}
+
+static int fast_uart_ioctl(struct uart_port *port, unsigned int reg, unsigned long value)
+{
+	switch(reg) {
+	case READ_UART_WATERMARK:
+		return read_watermark(port);
+	case WRITE_UART_WATERMARK:
+		return write_watermark(port, value);
+	case READ_UART_TIMEOUT:
+		return read_timeout(port);
+	case WRITE_UART_TIMEOUT:
+		return write_timeout(port, value);
+	default:
+		return -ENOIOCTLCMD;
+	}
 }
 
 static int serial8250_default_handle_irq(struct uart_port *port);
@@ -1082,28 +1153,36 @@ static void autoconfig_16550a(struct uart_8250_port *up)
 	 */
 	iersave = serial_in(up, UART_IER);
 	serial_out(up, UART_IER, iersave & ~UART_IER_UUE);
-	if (!(serial_in(up, UART_IER) & UART_IER_UUE)) {
-		/*
-		 * OK it's in a known zero state, try writing and reading
-		 * without disturbing the current state of the other bits.
-		 */
-		serial_out(up, UART_IER, iersave | UART_IER_UUE);
-		if (serial_in(up, UART_IER) & UART_IER_UUE) {
+
+	/* Joseph :For the Fast UART this need to be bi-passed.
+	 * Other UARTS don't need this in Vanquish.
+	 */
+
+	if(up->fast_uart != 1)
+	{
+		if (!(serial_in(up, UART_IER) & UART_IER_UUE)) {
 			/*
-			 * It's an Xscale.
-			 * We'll leave the UART_IER_UUE bit set to 1 (enabled).
+			 * OK it's in a known zero state, try writing and reading
+			 * without disturbing the current state of the other bits.
+ 			 */
+			serial_out(up, UART_IER, iersave | UART_IER_UUE);
+			if (serial_in(up, UART_IER) & UART_IER_UUE) {
+				/*
+				 * It's an Xscale.
+				 * We'll leave the UART_IER_UUE bit set to 1 (enabled).
+				 */
+				DEBUG_AUTOCONF("Xscale ");
+				up->port.type = PORT_XSCALE;
+				up->capabilities |= UART_CAP_UUE | UART_CAP_RTOIE;
+				return;
+			}
+		} else {
+			/*
+			 * If we got here we couldn't force the IER_UUE bit to 0.
+			 * Log it and continue.
 			 */
-			DEBUG_AUTOCONF("Xscale ");
-			up->port.type = PORT_XSCALE;
-			up->capabilities |= UART_CAP_UUE | UART_CAP_RTOIE;
-			return;
+			DEBUG_AUTOCONF("Couldn't force IER_UUE to 0 ");
 		}
-	} else {
-		/*
-		 * If we got here we couldn't force the IER_UUE bit to 0.
-		 * Log it and continue.
-		 */
-		DEBUG_AUTOCONF("Couldn't force IER_UUE to 0 ");
 	}
 	serial_out(up, UART_IER, iersave);
 
@@ -1118,14 +1197,16 @@ static void autoconfig_16550a(struct uart_8250_port *up)
 
 		return;
 	}
-
-	/*
-	 * We distinguish between 16550A and U6 16550A by counting
-	 * how many bytes are in the FIFO.
-	 */
-	if (up->port.type == PORT_16550A && size_fifo(up) == 64) {
-		up->port.type = PORT_U6_16550A;
-		up->capabilities |= UART_CAP_AFE;
+	if(up->fast_uart != 1) // FIFO size for fast UART is fixed.
+	{
+		/*
+		 * We distinguish between 16550A and U6 16550A by counting
+		 * how many bytes are in the FIFO.
+		 */
+		if (up->port.type == PORT_16550A && size_fifo(up) == 64) {
+			up->port.type = PORT_U6_16550A;
+			up->capabilities |= UART_CAP_AFE;
+		}
 	}
 }
 
@@ -1212,15 +1293,19 @@ static void autoconfig(struct uart_8250_port *up)
 	 * manufacturer would be stupid enough to design a board
 	 * that conflicts with COM 1-4 --- we hope!
 	 */
-	if (!(port->flags & UPF_SKIP_TEST)) {
-		serial_out(up, UART_MCR, UART_MCR_LOOP | 0x0A);
-		status1 = serial_in(up, UART_MSR) & 0xF0;
-		serial_out(up, UART_MCR, save_mcr);
-		if (status1 != 0x90) {
-			spin_unlock_irqrestore(&port->lock, flags);
-			DEBUG_AUTOCONF("LOOP test failed (%02x) ",
-				       status1);
-			goto out;
+	// Joseph: This Check has to be ignored for Fast UART as MCR register is not implemented
+	if(up->fast_uart != 1)
+	{
+		if (!(port->flags & UPF_SKIP_TEST)) {
+			serial_out(up, UART_MCR, UART_MCR_LOOP | 0x0A);
+			status1 = serial_in(up, UART_MSR) & 0xF0;
+			serial_out(up, UART_MCR, save_mcr);
+			if (status1 != 0x90) {
+				spin_unlock_irqrestore(&port->lock, flags);
+				DEBUG_AUTOCONF("LOOP test failed (%02x) ",
+						   status1);
+				goto out;
+			}
 		}
 	}
 
@@ -2545,7 +2630,8 @@ static void serial8250_set_divisor(struct uart_port *port, unsigned int baud,
 	else
 		serial_port_out(port, UART_LCR, up->lcr | UART_LCR_DLAB);
 
-	serial_dl_write(up, quot);
+	if(up->fast_uart != 1)
+		serial_dl_write(up, quot);
 
 	/* XR17V35x UARTs have an extra fractional divisor register (DLD) */
 	if (up->port.type == PORT_XR17V35X)
@@ -3088,8 +3174,8 @@ serial8250_type(struct uart_port *port)
 	return uart_config[type].name;
 }
 
-static const struct uart_ops serial8250_pops = {
-	.tx_empty	= serial8250_tx_empty,
+static struct uart_ops serial8250_pops = {		//Joseph : const property removed to provide ioctl function
+	.tx_empty	= serial8250_tx_empty,		// for FAST UART
 	.set_mctrl	= serial8250_set_mctrl,
 	.get_mctrl	= serial8250_get_mctrl,
 	.stop_tx	= serial8250_stop_tx,
@@ -3859,7 +3945,16 @@ int serial8250_register_8250_port(struct uart_8250_port *up)
 		uart->port.unthrottle	= up->port.unthrottle;
 		uart->port.rs485_config	= up->port.rs485_config;
 		uart->port.rs485	= up->port.rs485;
-		uart->dma		= up->dma;
+		uart->fast_uart		= up->fast_uart;		//Joseph: Added for Fast UART
+		if(up->fast_uart) {
+			serial8250_pops.ioctl = fast_uart_ioctl;
+			uart->port.ops = &serial8250_pops;
+			uart->dma		= up->dma;
+		}
+		else
+		{
+			uart->dma		= NULL;					//Joseph: All the other UARTs should not use DMAs
+		}
 
 		/* Take tx_loadsz from fifosize if it wasn't set separately */
 		if (uart->port.fifosize && !uart->tx_loadsz)

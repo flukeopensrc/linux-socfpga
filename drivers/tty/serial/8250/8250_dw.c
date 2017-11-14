@@ -334,6 +334,13 @@ static int dw8250_probe_of(struct uart_port *p,
 	if (has_ucv)
 		dw8250_setup_port(up);
 
+	if(read_watermark(p) > 0) {
+		up->dma = &data->dma;
+		p->fifosize = 2048;		/* Set as per FPGA FIFO-Size = 2K */
+		up->fast_uart = 1;
+	}
+	else
+		up->fast_uart = 0;
 	/* if we have a valid fifosize, try hooking up DMA here */
 	if (p->fifosize) {
 		up->dma = &data->dma;
