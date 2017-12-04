@@ -56,6 +56,9 @@
 
 };
 
+&fpga_bridge0 {
+	bridge-enable = <1>;
+};
 
 &gmac0 {
 	phy-mode = "gmii";
@@ -170,6 +173,7 @@
         cdns,tchsh-ns = <4>;
         cdns,tslch-ns = <4>;
         cdns,is-decoded-cs = <0>;
+        cdns,trigger-address = <0x00000000>; /* future versions of cadence driver will need this */
 
         part0: partition@0 {
                     label = "Flash 0 Raw Data"; /* appended from boardinfo */
