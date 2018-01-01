@@ -144,18 +144,14 @@ static int socfpga_dwmac_parse_data(struct socfpga_dwmac *dwmac, struct device *
 
 	np_splitter = of_parse_phandle(np, "altr,emac-splitter", 0);
 	if (np_splitter) {
-        printk("FOUND a splitter!\n");
 		if (of_address_to_resource(np_splitter, 0, &res_splitter)) {
 			dev_info(dev, "Missing emac splitter address\n");
 			return -EINVAL;
 		}
 
-        printk("Splitter base/start address = %x\n", res_splitter.start);
-
 		dwmac->splitter_base = devm_ioremap_resource(dev, &res_splitter);
 		if (IS_ERR(dwmac->splitter_base)) {
 			dev_info(dev, "Failed to mapping emac splitter\n");
-            printk("Bad splitter base address is %ld\n", dwmac->splitter_base);
 			return PTR_ERR(dwmac->splitter_base);
 		}
 	}
@@ -297,7 +293,6 @@ static void *socfpga_dwmac_probe(struct platform_device *pdev)
 
 	dwmac = devm_kzalloc(dev, sizeof(*dwmac), GFP_KERNEL);
 	if (!dwmac) {
-        printk("socfpga_dwmac_probe failure, devm_kzalloc failed. can't allocate $d bytes\n", sizeof(*dwmac));
 		return ERR_PTR(-ENOMEM);
     }
 
