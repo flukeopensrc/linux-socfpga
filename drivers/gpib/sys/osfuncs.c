@@ -20,6 +20,7 @@
 
 #include <linux/fcntl.h>
 #include <linux/kmod.h>
+#include <linux/string.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
 
@@ -45,19 +46,23 @@ static int sad_ioctl( gpib_board_t *board, gpib_file_private_t *file_priv,
 	unsigned long arg );
 static int eos_ioctl( gpib_board_t *board, unsigned long arg );
 static int request_service_ioctl( gpib_board_t *board, unsigned long arg );
-static int iobase_ioctl( gpib_board_t *board, unsigned long arg );
-static int irq_ioctl( gpib_board_t *board, unsigned long arg );
-static int dma_ioctl( gpib_board_t *board, unsigned long arg );
-static int autospoll_ioctl(gpib_board_t *board, unsigned long arg);
+static int iobase_ioctl( gpib_board_config_t *config, unsigned long arg );
+static int irq_ioctl( gpib_board_config_t *config, unsigned long arg );
+static int dma_ioctl( gpib_board_config_t *config, unsigned long arg );
+static int autospoll_ioctl(gpib_board_t *board, gpib_file_private_t *file_priv,
+			unsigned long arg);
 static int mutex_ioctl( gpib_board_t *board, gpib_file_private_t *file_priv,
 	unsigned long arg );
 static int timeout_ioctl( gpib_board_t *board, unsigned long arg );
 static int status_bytes_ioctl( gpib_board_t *board, unsigned long arg );
 static int board_info_ioctl( const gpib_board_t *board, unsigned long arg );
 static int ppc_ioctl( gpib_board_t *board, unsigned long arg );
+static int set_local_ppoll_mode_ioctl( gpib_board_t *board, unsigned long arg);
+static int get_local_ppoll_mode_ioctl( gpib_board_t *board, unsigned long arg);
 static int query_board_rsv_ioctl( gpib_board_t *board, unsigned long arg );
 static int interface_clear_ioctl( gpib_board_t *board, unsigned long arg );
-static int select_pci_ioctl( gpib_board_t *board, unsigned long arg );
+static int select_pci_ioctl( gpib_board_config_t *config, unsigned long arg );
+static int select_device_tree_path_ioctl( gpib_board_config_t *config, unsigned long arg );
 static int event_ioctl( gpib_board_t *board, unsigned long arg );
 static int request_system_control_ioctl( gpib_board_t *board, unsigned long arg );
 static int t1_delay_ioctl( gpib_board_t *board, unsigned long arg );
@@ -79,6 +84,7 @@ static gpib_descriptor_t* handle_to_descriptor( const gpib_file_private_t *file_
 static int init_gpib_file_private( gpib_file_private_t *priv )
 {
 	memset(priv, 0, sizeof(*priv));
+	atomic_set(&priv->holding_mutex, 0);
 	priv->descriptors[ 0 ] = kmalloc( sizeof( gpib_descriptor_t ), GFP_KERNEL );
 	if( priv->descriptors[ 0 ] == NULL )
 	{
@@ -113,7 +119,7 @@ int ibopen(struct inode *inode, struct file *filep)
 	priv = filep->private_data;
 	init_gpib_file_private( ( gpib_file_private_t * ) filep->private_data );
 
-	GPIB_DPRINTK( "gpib: opening minor %d\n", minor );
+	GPIB_DPRINTK( "pid %i, gpib: opening minor %d\n", current->pid, minor );
 
 	if(board->use_count == 0)
 	{
@@ -124,7 +130,7 @@ int ibopen(struct inode *inode, struct file *filep)
 		retval = request_module( module_string );
 		if( retval )
 		{
-			GPIB_DPRINTK( "gpib: request module returned %i\n", retval );
+			GPIB_DPRINTK( "pid %i, gpib: request module returned %i\n", current->pid, retval );
 		}
 	}
 	if(board->interface)
@@ -146,6 +152,7 @@ int ibclose(struct inode *inode, struct file *filep)
 	unsigned int minor = iminor(inode);
 	gpib_board_t *board;
 	gpib_file_private_t *priv = filep->private_data;
+	gpib_descriptor_t *desc;
 
 	if(minor >= GPIB_MAX_NUM_BOARDS)
 	{
@@ -153,21 +160,42 @@ int ibclose(struct inode *inode, struct file *filep)
 		return -ENODEV;
 	}
 
-	GPIB_DPRINTK( "gpib: closing minor %d\n", minor );
+	GPIB_DPRINTK( "pid %i, gpib: closing minor %d\n", current->pid, minor );
 
 	board = &board_array[ minor ];
 
 	if( priv )
 	{
+		desc = handle_to_descriptor(priv, 0);
+		if (desc != NULL)
+		{
+			if (desc->autopoll_enabled)
+			{
+				GPIB_DPRINTK( "pid %i, gpib: decrementing autospollers \n", current->pid );
+				if (board->autospollers > 0)
+					board->autospollers--;
+				else
+					printk("gpib: Attempt to decrement zero autospollers \n");
+			}
+		}
+		else
+		{
+			printk("gpib: Unexpected null gpib_descriptor\n");
+		}
+
 		cleanup_open_devices( priv, board );
+
+		smp_mb__before_atomic();
 		if( atomic_read(&priv->holding_mutex) )
 			mutex_unlock( &board->user_mutex );
+		smp_mb__after_atomic();
 
 		if(priv->got_module && board->use_count)
 		{
 			module_put(board->provider_module);
 			--board->use_count;
 		}
+
 		kfree( filep->private_data );
 		filep->private_data = NULL;
 	}
@@ -239,19 +267,19 @@ long ibioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	switch( cmd )
 	{
 		case CFCBASE:
-			retval = iobase_ioctl( board, arg );
+			retval = iobase_ioctl( &board->config, arg );
 			goto done;
 			break;
 		case CFCIRQ:
-			retval = irq_ioctl( board, arg );
+			retval = irq_ioctl( &board->config, arg );
 			goto done;
 			break;
 		case CFCDMA:
-			retval = dma_ioctl( board, arg );
+			retval = dma_ioctl( &board->config, arg );
 			goto done;
 			break;
 		case IBAUTOSPOLL:
-			retval = autospoll_ioctl(board, arg);
+			retval = autospoll_ioctl(board, file_priv, arg);
 			goto done;
 			break;
 		case IBBOARD_INFO:
@@ -273,7 +301,11 @@ long ibioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 			goto done;
 			break;
 		case IBSELECT_PCI:
-			retval = select_pci_ioctl( board, arg );
+			retval = select_pci_ioctl( &board->config, arg );
+			goto done;
+			break;
+		case IBSELECT_DEVICE_TREE_PATH:
+			retval = select_device_tree_path_ioctl( &board->config, arg );
 			goto done;
 			break;
 		default:
@@ -361,6 +393,14 @@ long ibioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 			break;
 		case IBPPC:
 			retval = ppc_ioctl( board, arg );
+			goto done;
+			break;
+		case IBPP2_SET:
+			retval = set_local_ppoll_mode_ioctl(board, arg);
+			goto done;
+			break;
+		case IBPP2_GET:
+			retval = get_local_ppoll_mode_ioctl(board, arg);
 			goto done;
 			break;
 		case IBQUERY_BOARD_RSV:
@@ -500,7 +540,7 @@ static int read_ioctl( gpib_file_private_t *file_priv, gpib_board_t *board,
 
 	if(read_cmd.completed_transfer_count > read_cmd.requested_transfer_count)
 		return -EINVAL;
-	
+
 	desc = handle_to_descriptor( file_priv, read_cmd.handle );
 	if( desc == NULL ) return -EINVAL;
 
@@ -514,8 +554,10 @@ static int read_ioctl( gpib_file_private_t *file_priv, gpib_board_t *board,
 	if(!access_ok(VERIFY_WRITE, userbuf, remain))
 		return -EFAULT;
 
+	smp_mb__before_atomic();
 	atomic_set(&desc->io_in_progress, 1);
-
+	smp_mb__after_atomic();
+	
 	/* Read buffer loads till we fill the user supplied buffer */
 	while(remain > 0 && end_flag == 0)
 	{
@@ -546,7 +588,11 @@ static int read_ioctl( gpib_file_private_t *file_priv, gpib_board_t *board,
 	}
 	if(retval == 0)
 		retval = copy_to_user((void*) arg, &read_cmd, sizeof(read_cmd));
+
+	smp_mb__before_atomic();
 	atomic_set(&desc->io_in_progress, 0);
+	smp_mb__after_atomic();
+
 	wake_up_interruptible( &board->wait );
 	if(retval) return -EFAULT;
 
@@ -562,6 +608,7 @@ static int command_ioctl( gpib_file_private_t *file_priv,
 	int retval;
 	int fault = 0;
 	gpib_descriptor_t *desc;
+	size_t bytes_written;
 
 	retval = copy_from_user(&cmd, (void*) arg, sizeof(cmd));
 	if( retval )
@@ -582,32 +629,50 @@ static int command_ioctl( gpib_file_private_t *file_priv,
 	if(!access_ok(VERIFY_READ, userbuf, remain))
 		return -EFAULT;
 
-	/* Write buffer loads till we empty the user supplied buffer */
+	/* Write buffer loads till we empty the user supplied buffer.
+		Call drivers at least once, even if remain is zero, in
+		order to allow them to insure previous commands were
+		completely finished, in the case of a restarted ioctl.  */
+
+	smp_mb__before_atomic();
 	atomic_set(&desc->io_in_progress, 1);
-	while( remain > 0 )
+	smp_mb__after_atomic();
+	
+	do
 	{
 		fault = copy_from_user(board->buffer, userbuf, (board->buffer_length < remain) ?
 			board->buffer_length : remain );
-		if(retval) retval = -EFAULT;
-		else
+		if(fault)
+		{
+			retval = -EFAULT;
+			bytes_written = 0;
+		}else
+		{
 			retval = ibcmd(board, board->buffer, (board->buffer_length < remain) ?
-				board->buffer_length : remain );
+				board->buffer_length : remain, &bytes_written );
+		}
+		remain -= bytes_written;
+		userbuf += bytes_written;
 		if(retval < 0)
 		{
+			smp_mb__before_atomic();
 			atomic_set(&desc->io_in_progress, 0);
+			smp_mb__after_atomic();
+			
 			wake_up_interruptible( &board->wait );
 			break;
 		}
-		if( retval == 0 ) break;
-		remain -= retval;
-		userbuf += retval;
-	}
+	}while( remain > 0 );
 
 	cmd.completed_transfer_count = cmd.requested_transfer_count - remain;
 
 	if(fault == 0)
 		fault = copy_to_user((void*) arg, &cmd, sizeof(cmd));
+
+	smp_mb__before_atomic();
 	atomic_set(&desc->io_in_progress, 0);
+	smp_mb__after_atomic();
+
 	wake_up_interruptible( &board->wait );
 	if( fault ) return -EFAULT;
 
@@ -636,14 +701,16 @@ static int write_ioctl(gpib_file_private_t *file_priv, gpib_board_t *board,
 
 	userbuf = (uint8_t*)(unsigned long)write_cmd.buffer_ptr;
 	userbuf += write_cmd.completed_transfer_count;
-	
+
 	remain = write_cmd.requested_transfer_count - write_cmd.completed_transfer_count;
 
 	/* Check read access to buffer */
 	if(!access_ok(VERIFY_READ, userbuf, remain))
 		return -EFAULT;
 
+	smp_mb__before_atomic();
 	atomic_set(&desc->io_in_progress, 1);
+	smp_mb__after_atomic();
 
 	/* Write buffer loads till we empty the user supplied buffer */
 	while(remain > 0)
@@ -680,7 +747,11 @@ static int write_ioctl(gpib_file_private_t *file_priv, gpib_board_t *board,
 	}
 	if(fault == 0)
 		fault = copy_to_user((void*) arg, &write_cmd, sizeof(write_cmd));
+
+	smp_mb__before_atomic();
 	atomic_set(&desc->io_in_progress, 0);
+	smp_mb__after_atomic();
+
 	wake_up_interruptible( &board->wait );
 	if(fault) return -EFAULT;
 
@@ -722,8 +793,8 @@ static int increment_open_device_count( struct list_head *head, unsigned int pad
 		device = list_entry( list_ptr, gpib_status_queue_t, list );
 		if( gpib_address_equal( device->pad, device->sad, pad, sad ) )
 		{
-			GPIB_DPRINTK( "incrementing open count for pad %i, sad %i\n",
-				device->pad, device->sad );
+			GPIB_DPRINTK( "pid %i, incrementing open count for pad %i, sad %i\n",
+				current->pid, device->pad, device->sad );
 			device->reference_count++;
 			return 0;
 		}
@@ -740,8 +811,8 @@ static int increment_open_device_count( struct list_head *head, unsigned int pad
 
 	list_add( &device->list, head );
 
-	GPIB_DPRINTK( "opened pad %i, sad %i\n",
-		device->pad, device->sad );
+	GPIB_DPRINTK( "pid %i, opened pad %i, sad %i\n",
+		current->pid, device->pad, device->sad );
 
 	return 0;
 }
@@ -756,8 +827,8 @@ static int subtract_open_device_count( struct list_head *head, unsigned int pad,
 		device = list_entry( list_ptr, gpib_status_queue_t, list );
 		if( gpib_address_equal( device->pad, device->sad, pad, sad ) )
 		{
-			GPIB_DPRINTK( "decrementing open count for pad %i, sad %i\n",
-				device->pad, device->sad );
+			GPIB_DPRINTK( "pid %i, decrementing open count for pad %i, sad %i\n",
+				current->pid, device->pad, device->sad );
 			if( count > device->reference_count )
 			{
 				printk( "gpib: bug! in subtract_open_device_count()\n" );
@@ -766,8 +837,8 @@ static int subtract_open_device_count( struct list_head *head, unsigned int pad,
 			device->reference_count -= count;
 			if( device->reference_count == 0 )
 			{
-				GPIB_DPRINTK( "closing pad %i, sad %i\n",
-					device->pad, device->sad );
+				GPIB_DPRINTK( "pid %i, closing pad %i, sad %i\n",
+					current->pid, device->pad, device->sad );
 				list_del( list_ptr );
 				kfree( device );
 			}
@@ -826,7 +897,10 @@ static int open_dev_ioctl( struct file *filep, gpib_board_t *board, unsigned lon
 	for( i = 0; i < GPIB_MAX_NUM_DESCRIPTORS; i++ )
 		if( file_priv->descriptors[ i ] == NULL ) break;
 	if( i == GPIB_MAX_NUM_DESCRIPTORS )
+	{
+		mutex_unlock(&file_priv->descriptors_mutex);
 		return -ERANGE;
+	}
 	file_priv->descriptors[ i ] = kmalloc( sizeof( gpib_descriptor_t ), GFP_KERNEL );
 	if( file_priv->descriptors[ i ] == NULL )
 	{
@@ -846,7 +920,9 @@ static int open_dev_ioctl( struct file *filep, gpib_board_t *board, unsigned lon
 
 	/* clear stuck srq state, since we may be able to find service request on
 	 * the new device */
+	smp_mb__before_atomic();
 	atomic_set(&board->stuck_srq, 0);
+	smp_mb__after_atomic();
 
 	open_dev_cmd.handle = i;
 	retval = copy_to_user( ( void* ) arg, &open_dev_cmd, sizeof( open_dev_cmd ) );
@@ -883,6 +959,8 @@ static int serial_poll_ioctl( gpib_board_t *board, unsigned long arg )
 {
 	serial_poll_ioctl_t serial_cmd;
 	int retval;
+
+	GPIB_DPRINTK( "pid %i, entering serial_poll_ioctl()\n", current->pid);
 
 	retval = copy_from_user( &serial_cmd, ( void* ) arg, sizeof( serial_cmd ) );
 	if( retval )
@@ -944,11 +1022,10 @@ static int parallel_poll_ioctl( gpib_board_t *board, unsigned long arg )
 static int online_ioctl( gpib_board_t *board, unsigned long arg )
 {
 	online_ioctl_t online_cmd;
-	gpib_board_config_t config;
 	int retval;
 	void *init_data = NULL;
 
-	config.init_data = NULL;
+	board->config.init_data = NULL;
 
 	if(!capable(CAP_SYS_ADMIN))
 		return -EPERM;
@@ -958,29 +1035,33 @@ static int online_ioctl( gpib_board_t *board, unsigned long arg )
 		return -EFAULT;
 	if(online_cmd.init_data_length > 0)
 	{
-		config.init_data = vmalloc(online_cmd.init_data_length);
-		if(config.init_data == NULL)
+		board->config.init_data = vmalloc(online_cmd.init_data_length);
+		if(board->config.init_data == NULL)
 			return -ENOMEM;
 		BUG_ON(sizeof(init_data) > sizeof(online_cmd.init_data_ptr));
 		init_data = (void*)(unsigned long)(online_cmd.init_data_ptr);
-		retval = copy_from_user(config.init_data, init_data, online_cmd.init_data_length);
+		retval = copy_from_user(board->config.init_data, init_data, online_cmd.init_data_length);
 		if(retval)
 		{
-			vfree(config.init_data);
+			vfree(board->config.init_data);
 			return -EFAULT;
 		}
-		config.init_data_length = online_cmd.init_data_length;
+		board->config.init_data_length = online_cmd.init_data_length;
 	}else
 	{
-		config.init_data = NULL;
-		config.init_data_length = 0;
+		board->config.init_data = NULL;
+		board->config.init_data_length = 0;
 	}
 	if(online_cmd.online)
-		retval = ibonline(board, config);
+		retval = ibonline(board);
 	else
 		retval = iboffline(board);
-	if(config.init_data)
-		vfree(config.init_data);
+	if(board->config.init_data)
+	{
+		vfree(board->config.init_data);
+		board->config.init_data = NULL;
+		board->config.init_data_length = 0;
+	}
 	return retval;
 }
 
@@ -1117,7 +1198,7 @@ static int request_service_ioctl( gpib_board_t *board, unsigned long arg )
 	return ibrsv( board, status_byte );
 }
 
-static int iobase_ioctl( gpib_board_t *board, unsigned long arg )
+static int iobase_ioctl( gpib_board_config_t *config, unsigned long arg )
 {
 	uint64_t base_addr;
 	int retval;
@@ -1130,12 +1211,12 @@ static int iobase_ioctl( gpib_board_t *board, unsigned long arg )
 		return -EFAULT;
 
 	BUG_ON(sizeof(void*) > sizeof(base_addr));
-	board->ibbase = (void*)(unsigned long)(base_addr);
+	config->ibbase = (void*)(unsigned long)(base_addr);
 
 	return 0;
 }
 
-static int irq_ioctl( gpib_board_t *board, unsigned long arg )
+static int irq_ioctl( gpib_board_config_t *config, unsigned long arg )
 {
 	unsigned int irq;
 	int retval;
@@ -1147,12 +1228,12 @@ static int irq_ioctl( gpib_board_t *board, unsigned long arg )
 	if( retval )
 		return -EFAULT;
 
-	board->ibirq = irq;
+	config->ibirq = irq;
 
 	return 0;
 }
 
-static int dma_ioctl( gpib_board_t *board, unsigned long arg )
+static int dma_ioctl( gpib_board_config_t *config, unsigned long arg )
 {
 	unsigned int dma_channel;
 	int retval;
@@ -1164,35 +1245,53 @@ static int dma_ioctl( gpib_board_t *board, unsigned long arg )
 	if( retval )
 		return -EFAULT;
 
-	board->ibdma = dma_channel;
+	config->ibdma = dma_channel;
 
 	return 0;
 }
 
-static int autospoll_ioctl(gpib_board_t *board, unsigned long arg)
+static int autospoll_ioctl(gpib_board_t *board, gpib_file_private_t *file_priv,
+			unsigned long arg)
 {
 	autospoll_ioctl_t enable;
 	int retval;
+	gpib_descriptor_t *desc;
 
 	retval = copy_from_user( &enable, ( void * ) arg, sizeof( enable ) );
 	if(retval)
 		return -EFAULT;
 
-/*FIXME: should keep track of whether autospolling is on or off
- * by descriptor.  That would also allow automatic decrement
- * of autospollers when descriptors are closed. */
+	desc = handle_to_descriptor( file_priv, 0 ); /* board handle is 0 */
+
 	if(enable)
-		board->autospollers++;
+	{
+		if (!desc->autopoll_enabled)
+		{
+			board->autospollers++;
+			desc->autopoll_enabled = 1;
+		}
+		retval = 0;
+	}
 	else
 	{
-		if(board->autospollers <= 0)
+		if(desc->autopoll_enabled)
 		{
-			printk("gpib: tried to set number of autospollers negative\n");
+			desc->autopoll_enabled = 0;
+			if(board->autospollers > 0)
+			{
+				board->autospollers--;
+				retval = 0;
+			}
+					else
+			{
+				printk("gpib: tried to set number of autospollers negative\n");
+				retval = -EINVAL;
+			}
+		}
+		else
+		{
+			printk("gpib: autopoll disable requested before enable\n");
 			retval = -EINVAL;
-		}else
-		{
-			board->autospollers--;
-			retval = 0;
 		}
 	}
 	return retval;
@@ -1220,8 +1319,11 @@ static int mutex_ioctl( gpib_board_t *board, gpib_file_private_t *file_priv,
 		board->locking_pid = current->pid;
 		spin_unlock(&board->locking_pid_spinlock);
 
+		smp_mb__before_atomic();
 		atomic_set(&file_priv->holding_mutex, 1);
-		GPIB_DPRINTK("locked board %d mutex\n", board->minor);
+		smp_mb__after_atomic();
+
+		GPIB_DPRINTK("pid %i, locked board %d mutex\n", current->pid, board->minor);
 	}else
 	{
 		spin_lock(&board->locking_pid_spinlock);
@@ -1235,10 +1337,12 @@ static int mutex_ioctl( gpib_board_t *board, gpib_file_private_t *file_priv,
 		board->locking_pid = 0;
 		spin_unlock(&board->locking_pid_spinlock);
 
+		smp_mb__before_atomic();
 		atomic_set(&file_priv->holding_mutex, 0);
+		smp_mb__after_atomic();
 
 		mutex_unlock( &board->user_mutex );
-		GPIB_DPRINTK("unlocked board %i mutex\n", board->minor);
+		GPIB_DPRINTK("pid %i, unlocked board %i mutex\n", current->pid, board->minor);
 	}
 
 
@@ -1255,7 +1359,7 @@ static int timeout_ioctl( gpib_board_t *board, unsigned long arg )
 		return -EFAULT;
 
 	board->usec_timeout = timeout;
-	GPIB_DPRINTK( "timeout set to %i usec\n", timeout );
+	GPIB_DPRINTK( "pid %i, timeout set to %i usec\n", current->pid, timeout );
 
 	return 0;
 }
@@ -1284,6 +1388,39 @@ static int ppc_ioctl( gpib_board_t *board, unsigned long arg)
 		retval = ibppc( board, cmd.config );
 		if( retval < 0 ) return retval;
 	}
+
+	return 0;
+}
+
+static int set_local_ppoll_mode_ioctl( gpib_board_t *board, unsigned long arg)
+{
+	local_ppoll_mode_ioctl_t cmd;
+	int retval;
+
+	retval = copy_from_user( &cmd, ( void * ) arg, sizeof( cmd ) );
+	if( retval )
+		return -EFAULT;
+
+	if(board->interface->local_parallel_poll_mode == NULL)
+	{
+		printk("gpib: local/remote parallel poll mode not supported by driver.");
+		return -EIO;
+	}
+	board->local_ppoll_mode = cmd != 0;
+	board->interface->local_parallel_poll_mode( board, board->local_ppoll_mode );
+
+	return 0;
+}
+
+static int get_local_ppoll_mode_ioctl( gpib_board_t *board, unsigned long arg)
+{
+	local_ppoll_mode_ioctl_t cmd;
+	int retval;
+
+	cmd = board->local_ppoll_mode;
+	retval = copy_to_user( ( void * ) arg, &cmd, sizeof( cmd ) );
+	if( retval )
+		return -EFAULT;
 
 	return 0;
 }
@@ -1337,7 +1474,7 @@ static int interface_clear_ioctl( gpib_board_t *board, unsigned long arg )
 	return ibsic( board, usec_duration );
 }
 
-static int select_pci_ioctl( gpib_board_t *board, unsigned long arg )
+static int select_pci_ioctl( gpib_board_config_t *config, unsigned long arg )
 {
 	select_pci_ioctl_t selection;
 	int retval;
@@ -1348,9 +1485,39 @@ static int select_pci_ioctl( gpib_board_t *board, unsigned long arg )
 	retval = copy_from_user( &selection, ( void * ) arg, sizeof( selection ) );
 	if( retval ) return -EFAULT;
 
-	board->pci_bus = selection.pci_bus;
-	board->pci_slot = selection.pci_slot;
+	config->pci_bus = selection.pci_bus;
+	config->pci_slot = selection.pci_slot;
 
+	return 0;
+}
+
+static int select_device_tree_path_ioctl( gpib_board_config_t *config, unsigned long arg )
+{
+	select_device_tree_path_ioctl_t *selection;
+	int retval;
+
+	if(!capable(CAP_SYS_ADMIN))
+		return -EPERM;
+
+	selection = vmalloc(sizeof(select_device_tree_path_ioctl_t));
+	if(selection == NULL) return -ENOMEM;
+	
+	retval = copy_from_user( selection, ( void * ) arg, sizeof(select_device_tree_path_ioctl_t) );
+	if( retval ) 
+	{
+		vfree(selection);
+		return -EFAULT;
+	}
+
+	selection->device_tree_path[sizeof(selection->device_tree_path) - 1] = '\0';
+	kfree(config->device_tree_path);
+	config->device_tree_path = NULL;
+	if(strlen(selection->device_tree_path) > 0)
+	{
+		config->device_tree_path = kstrdup(selection->device_tree_path, GFP_KERNEL);
+	}
+
+	vfree(selection);
 	return 0;
 }
 

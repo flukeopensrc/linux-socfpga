@@ -36,10 +36,17 @@ int ibcac( gpib_board_t *board, int sync )
 		return -1;
 	}
 
+	if( status & ATN )
+	{
+		return 0;
+	}
+
 	retval = board->interface->take_control( board, sync );
 	if( retval < 0 )
-		printk("gpib: error while becoming active controller\n");
-
+	{
+		if(sync && retval == -ETIMEDOUT)
+			retval = board->interface->take_control( board, 0 );
+	}
 	board->interface->update_status( board, 0 );
 
 	return retval;
