@@ -49,6 +49,7 @@ void init_gpib_descriptor( gpib_descriptor_t *desc )
 	desc->pad = 0;
 	desc->sad = -1;
 	desc->is_board = 0;
+	desc->autopoll_enabled = 0;
 	atomic_set(&desc->io_in_progress, 0);
 }
 
@@ -101,6 +102,18 @@ void gpib_unregister_driver(gpib_interface_t *interface)
 	printk("gpib: unregistered %s interface\n", interface->name);
 }
 
+void init_gpib_board_config(gpib_board_config_t *config)
+{
+	config->init_data = NULL;
+	config->init_data_length = 0;
+	config->ibbase = 0;
+	config->ibirq = 0;
+	config->ibdma = 0;
+	config->pci_bus = -1;
+	config->pci_slot = -1;
+	config->device_tree_path = NULL;
+}
+
 void init_gpib_board( gpib_board_t *board )
 {
 	board->interface = NULL;
@@ -114,12 +127,13 @@ void init_gpib_board( gpib_board_t *board )
 	board->locking_pid = 0;
 	spin_lock_init(&board->locking_pid_spinlock);
 	spin_lock_init(&board->spinlock);
-	init_timer(&board->timer);
-	board->ibbase = 0;
-	board->ibirq = 0;
-	board->ibdma = 0;
-	board->pci_bus = -1;
-	board->pci_slot = -1;
+#ifdef HAVE_TIMER_SETUP
+	timer_setup(&board->timer, NULL, 0);
+#else
+	setup_timer(&board->timer, NULL, (unsigned long)board);
+#endif
+	board->dev = NULL;
+	init_gpib_board_config(&board->config);
 	board->private_data = NULL;
 	board->use_count = 0;
 	INIT_LIST_HEAD( &board->device_list );
@@ -135,6 +149,7 @@ void init_gpib_board( gpib_board_t *board )
 	init_gpib_pseudo_irq(&board->pseudo_irq);
 	board->master = 1;
 	atomic_set(&board->stuck_srq, 0);
+	board->local_ppoll_mode = 0;
 }
 
 int gpib_allocate_board( gpib_board_t *board )
@@ -208,7 +223,7 @@ static int __init gpib_common_init_module( void )
 	}
 	for(i = 0; i < GPIB_MAX_NUM_BOARDS; ++i)
 	{
-		device_create(gpib_class, 0, MKDEV(IBMAJOR, i), NULL, "gpib%i", i);
+		device_create(gpib_class, NULL, MKDEV(IBMAJOR, i), NULL, "gpib%i", i);
 	}
 	return 0;
 }
@@ -227,16 +242,16 @@ static void __exit gpib_common_exit_module( void )
 module_init( gpib_common_init_module );
 module_exit( gpib_common_exit_module );
 
-struct pci_dev* gpib_pci_get_device( const gpib_board_t *board, unsigned int vendor_id,
+struct pci_dev* gpib_pci_get_device( const gpib_board_config_t *config, unsigned int vendor_id,
 	unsigned int device_id, struct pci_dev *from)
 {
 	struct pci_dev *pci_device = from;
 
 	while( ( pci_device = pci_get_device( vendor_id, device_id, pci_device ) ) )
 	{
-		if( board->pci_bus >=0 && board->pci_bus != pci_device->bus->number )
+		if( config->pci_bus >=0 && config->pci_bus != pci_device->bus->number )
 			continue;
-		if( board->pci_slot >= 0 && board->pci_slot !=
+		if( config->pci_slot >= 0 && config->pci_slot !=
 			PCI_SLOT( pci_device->devfn ) )
 			continue;
 		return pci_device;
@@ -244,7 +259,7 @@ struct pci_dev* gpib_pci_get_device( const gpib_board_t *board, unsigned int ven
 	return NULL;
 }
 
-struct pci_dev* gpib_pci_get_subsys( const gpib_board_t *board, unsigned int vendor_id,
+struct pci_dev* gpib_pci_get_subsys( const gpib_board_config_t *config, unsigned int vendor_id,
 	unsigned int device_id, unsigned ss_vendor, unsigned ss_device,
 	struct pci_dev *from)
 {
@@ -252,9 +267,9 @@ struct pci_dev* gpib_pci_get_subsys( const gpib_board_t *board, unsigned int ven
 
 	while((pci_device = pci_get_subsys( vendor_id, device_id, ss_vendor, ss_device, pci_device)))
 	{
-		if(board->pci_bus >=0 && board->pci_bus != pci_device->bus->number)
+		if(config->pci_bus >=0 && config->pci_bus != pci_device->bus->number)
 			continue;
-		if(board->pci_slot >= 0 && board->pci_slot !=
+		if(config->pci_slot >= 0 && config->pci_slot !=
 			PCI_SLOT( pci_device->devfn))
 			continue;
 		return pci_device;

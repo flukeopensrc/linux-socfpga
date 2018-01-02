@@ -24,11 +24,19 @@ static int setup_serial_poll( gpib_board_t *board, unsigned int usec_timeout )
 {
 	uint8_t cmd_string[8];
 	int i;
+	size_t bytes_written;
+	int ret;
 
 	GPIB_DPRINTK( "entering setup_serial_poll()\n" );
 
-	ibcac( board, 0 );
-
+	osStartTimer( board, usec_timeout );
+	ret = ibcac( board, 1 );
+	if(ret < 0)
+	{
+		osRemoveTimer( board );
+		return ret;
+	}
+	
 	i = 0;
 	cmd_string[ i++ ] = UNL;
 	cmd_string[ i++ ] = MLA( board->pad );	/* controller's listen address */
@@ -36,8 +44,8 @@ static int setup_serial_poll( gpib_board_t *board, unsigned int usec_timeout )
 		cmd_string[ i++ ] = MSA( board->sad );
 	cmd_string[ i++ ] = SPE;	//serial poll enable
 
-	osStartTimer( board, usec_timeout );
-	if( board->interface->command( board, cmd_string, i ) < i )
+	ret = board->interface->command( board, cmd_string, i, &bytes_written);
+	if(ret < 0 || bytes_written < i )
 	{
 		printk("gpib: failed to setup serial poll\n");
 		osRemoveTimer( board );
@@ -59,16 +67,22 @@ static int read_serial_poll_byte( gpib_board_t *board, unsigned int pad,
 
 	GPIB_DPRINTK( "entering read_serial_poll_byte(), pad=%i sad=%i\n", pad, sad );
 
-	ibcac( board, 0);
-
+	osStartTimer( board, usec_timeout );
+	ret = ibcac( board, 1);
+	if(ret < 0) 
+	{
+		osRemoveTimer( board );
+		return ret;
+	}
+	
 	i = 0;
 	// send talk address
 	cmd_string[i++] = MTA( pad );
 	if( sad >= 0 )
 		cmd_string[i++] = MSA( sad );
 
-	osStartTimer( board, usec_timeout );
-	if( board->interface->command( board, cmd_string, i ) < i )
+	ret = board->interface->command( board, cmd_string, i, &nbytes );
+	if( ret < 0 || nbytes < i )
 	{
 		printk("gpib: failed to setup serial poll\n");
 		osRemoveTimer( board );
@@ -93,15 +107,23 @@ static int read_serial_poll_byte( gpib_board_t *board, unsigned int pad,
 static int cleanup_serial_poll( gpib_board_t *board, unsigned int usec_timeout )
 {
 	uint8_t cmd_string[8];
+	int ret;
+	size_t bytes_written;
 
 	GPIB_DPRINTK( "entering cleanup_serial_poll()\n" );
 
-	ibcac( board, 0 );
-
+	osStartTimer( board, usec_timeout );
+	ret = ibcac( board, 1 );
+	if(ret < 0)
+	{
+		osRemoveTimer( board );
+		return ret;
+	}
+	
 	cmd_string[ 0 ] = SPD;	/* disable serial poll bytes */
 	cmd_string[ 1 ] = UNT;
-	osStartTimer( board, usec_timeout );
-	if( board->interface->command( board, cmd_string, 2 ) < 2 )
+	ret = board->interface->command( board, cmd_string, 2, &bytes_written );
+	if( ret < 0 || bytes_written < 2 )
 	{
 		printk( "gpib: failed to disable serial poll\n" );
 		osRemoveTimer( board );
@@ -171,7 +193,7 @@ int serial_poll_all( gpib_board_t *board, unsigned int usec_timeout )
  * DVRSP
  * This function performs a serial poll of the device with primary
  * address pad and secondary address sad. If the device has no
- * secondary adddress, pass a zero in for this argument.  At the
+ * secondary adddress, pass a negative number in for this argument.  At the
  * end of a successful serial poll the response is returned in result.
  * SPD and UNT are sent at the completion of the poll.
  */

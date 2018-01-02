@@ -26,19 +26,40 @@
  */
 #include "gpib_user.h"
 #include <asm/atomic.h>
+#include <linux/device.h>
 #include <linux/mutex.h>
 #include <linux/wait.h>
 #include <linux/sched.h>
 #include <linux/timer.h>
 #include <linux/interrupt.h>
 
+#if defined(timer_setup) && defined(from_timer)
+#define HAVE_TIMER_SETUP
+#endif
+
 typedef struct gpib_interface_struct gpib_interface_t;
 typedef struct gpib_board_struct gpib_board_t;
 
+/* config parameters that are only used by driver attach functions */
 typedef struct
 {
+	/* firmware blob */
 	void *init_data;
 	int init_data_length;
+	/* IO base address to use for non-pnp cards (set by core, driver should make local copy) */
+	void *ibbase;
+	/* IRQ to use for non-pnp cards (set by core, driver should make local copy) */
+	unsigned int ibirq;
+	/* dma channel to use for non-pnp cards (set by core, driver should make local copy) */
+	unsigned int ibdma;
+	/* pci bus of card, useful for distinguishing multiple identical pci cards
+	 * (negative means don't care) */
+	int pci_bus;
+	/* pci slot of card, useful for distinguishing multiple identical pci cards
+	 * (negative means don't care) */
+	int pci_slot;
+	/* full device tree path of hardware to attach */
+	char *device_tree_path;
 } gpib_board_config_t;
 
 struct gpib_interface_struct
@@ -46,7 +67,7 @@ struct gpib_interface_struct
 	/* name of board */
 	char *name;
 	/* attach() initializes board and allocates resources */
-	int (*attach)(gpib_board_t *board, gpib_board_config_t config);
+	int (*attach)(gpib_board_t *board, const gpib_board_config_t *config);
 	/* detach() shuts down board and frees resources */
 	void (*detach)(gpib_board_t *board);
 	/* read() should read at most 'length' bytes from the bus into
@@ -67,9 +88,9 @@ struct gpib_interface_struct
 	 */
 	int (*write)(gpib_board_t *board, uint8_t *buffer, size_t length, int send_eoi, size_t *bytes_written);
 	/* command() writes the command bytes in 'buffer' to the bus
-	 * Returns number of bytes written or negative value on error.
+	 * Returns zero on success or negative value on error.
 	 */
-	ssize_t (*command)(gpib_board_t *board, uint8_t *buffer, size_t length);
+	int (*command)(gpib_board_t *board, uint8_t *buffer, size_t length, size_t *bytes_written);
 	/* Take control (assert ATN).  If 'asyncronous' is nonzero, take
 	 * control asyncronously (assert ATN immediately without waiting
 	 * for other processes to complete first).  Should not return
@@ -103,6 +124,8 @@ struct gpib_interface_struct
 	int (*parallel_poll)(gpib_board_t *board, uint8_t *result);
 	/* set/clear ist (individual status bit) */
 	void (*parallel_poll_response)( gpib_board_t *board, int ist );
+	/* select local parallel poll configuration mode PP2 versus remote PP1 */
+	void (*local_parallel_poll_mode)( gpib_board_t *board, int local );
 	/* Returns current status of the bus lines.  Should be set to
 	 * NULL if your board does not have the ability to query the
 	 * state of the bus lines. */
@@ -157,14 +180,21 @@ struct gpib_pseudo_irq
 {
 	struct timer_list timer;
 	irqreturn_t (*handler)(int, void * PT_REGS_ARG);
+	gpib_board_t *board;
 	atomic_t active;
 };
 
 static inline void init_gpib_pseudo_irq( struct gpib_pseudo_irq *pseudo_irq)
 {
 	pseudo_irq->handler = NULL;
-	init_timer(&pseudo_irq->timer);
+#ifdef HAVE_TIMER_SETUP
+	timer_setup(&pseudo_irq->timer,NULL,0);
+#else
+	setup_timer(&pseudo_irq->timer,NULL,0);
+#endif
+	smp_mb__before_atomic();
 	atomic_set(&pseudo_irq->active, 0);
+	smp_mb__after_atomic();
 }
 
 /* list so we can make a linked list of drivers */
@@ -211,18 +241,7 @@ struct gpib_board_struct
 	spinlock_t spinlock;
 	/* Watchdog timer to enable timeouts */
 	struct timer_list timer;
-	/* IO base address to use for non-pnp cards (set by core, driver should make local copy) */
-	void *ibbase;
-	/* IRQ to use for non-pnp cards (set by core, driver should make local copy) */
-	unsigned int ibirq;
-	/* dma channel to use for non-pnp cards (set by core, driver should make local copy) */
-	unsigned int ibdma;
-	/* pci bus of card, useful for distinguishing multiple identical pci cards
-	 * (negative means don't care) */
-	int pci_bus;
-	/* pci slot of card, useful for distinguishing multiple identical pci cards
-	 * (negative means don't care) */
-	int pci_slot;
+	struct device *dev;
 	/* 'private_data' can be used as seen fit by the driver to
 	 * store additional variables for this board */
 	void *private_data;
@@ -254,10 +273,14 @@ struct gpib_board_struct
 	struct gpib_pseudo_irq pseudo_irq;
 	/* error dong autopoll */
 	atomic_t stuck_srq;
+	gpib_board_config_t config;
 	/* Flag that indicates whether board is system controller of the bus */
 	unsigned master : 1;
 	/* individual status bit */
 	unsigned ist : 1;
+	/* one means local parallel poll mode ieee 488.1 PP2 (or no parallel poll PP0), 
+	 * zero means remote parallel poll configuration mode ieee 488.1 PP1 */
+	unsigned local_ppoll_mode : 1;
 };
 
 /* element of event queue */
@@ -299,6 +322,7 @@ typedef struct
 	int sad;	/* secondary gpib address (negative means disabled) */
 	atomic_t io_in_progress;
 	unsigned is_board : 1;
+	unsigned autopoll_enabled : 1;
 } gpib_descriptor_t;
 
 typedef struct
