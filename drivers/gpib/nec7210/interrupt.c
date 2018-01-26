@@ -59,6 +59,8 @@ irqreturn_t nec7210_interrupt_have_status( gpib_board_t *board,
 #endif
 	int retval = IRQ_NONE;
 	
+	smp_mb__before_atomic();
+
 	// record service request in status
 	if(status2 & HR_SRQI)
 	{
@@ -157,7 +159,6 @@ irqreturn_t nec7210_interrupt_have_status( gpib_board_t *board,
 	if(status1 & HR_ERR)
 	{
 		set_bit( BUS_ERROR_BN, &priv->state );
-		printk("nec7210: bus error\n");
 	}
 
 	if( status1 & HR_DEC )
@@ -187,6 +188,9 @@ irqreturn_t nec7210_interrupt_have_status( gpib_board_t *board,
 		wake_up_interruptible(&board->wait); /* wake up sleeping process */
 		retval = IRQ_HANDLED;
 	}
+
+	smp_mb__after_atomic();
+
 	return retval;
 }
 

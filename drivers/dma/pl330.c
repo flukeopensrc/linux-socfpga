@@ -1151,10 +1151,11 @@ static inline int _ldst_devtomem(unsigned dry_run, u8 buf[],
 			off += _emit_LD(dry_run, &buf[off], ALWAYS);
 			off += _emit_ST(dry_run, &buf[off], ALWAYS);
 		} else {
+			/* do FLUSHP at beginning of cycle to clear any stale dma requests before first data transfer. */
+			off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 			off += _emit_WFP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
 			off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
 			off += _emit_ST(dry_run, &buf[off], ALWAYS);
-			off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 		}
 		
 	}
@@ -1168,10 +1169,11 @@ static inline int _ldst_memtodev(unsigned dry_run, u8 buf[],
 	int off = 0;
 
 	while (cyc--) {
+		/* do FLUSHP at beginning of cycle to clear any stale dma requests before first data transfer. */
+		off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 		off += _emit_WFP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
 		off += _emit_LD(dry_run, &buf[off], ALWAYS);
 		off += _emit_STP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
-		off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 	}
 
 	return off;
