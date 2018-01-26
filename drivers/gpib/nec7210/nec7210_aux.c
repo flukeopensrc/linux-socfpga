@@ -22,7 +22,7 @@
 int nec7210_take_control(gpib_board_t *board, nec7210_private_t *priv, int syncronous)
 {
 	int i;
-	const int timeout = 1000;
+	const int timeout = 100;
 	int retval = 0;
 	unsigned int adsr_bits = 0;
 
@@ -39,25 +39,15 @@ int nec7210_take_control(gpib_board_t *board, nec7210_private_t *priv, int syncr
 			break;
 		udelay(1);
 	}
-	// if busy wait has failed, try sleeping
 	if( i == timeout )
 	{
-		for(i = 0; i < HZ; i++)
-		{
-			set_current_state(TASK_INTERRUPTIBLE);
-			if(schedule_timeout(1))
-				return -ERESTARTSYS;
-			adsr_bits = read_byte(priv, ADSR);
-			if((adsr_bits & HR_NATN) == 0)
-				break;
-		}
-		if(i == HZ)
-		{
-			printk("nec7210: error waiting for ATN\n");
-			return -ETIMEDOUT;
-		}
+		return -ETIMEDOUT;
 	}
+
+	smp_mb__before_atomic();
 	clear_bit( WRITE_READY_BN, &priv->state );
+	smp_mb__after_atomic();
+	
 	return retval;
 }
 
@@ -95,7 +85,10 @@ int nec7210_go_to_standby(gpib_board_t *board, nec7210_private_t *priv)
 			return -ETIMEDOUT;
 		}
 	}
+
+	smp_mb__before_atomic();
 	clear_bit( COMMAND_READY_BN, &priv->state );
+	smp_mb__after_atomic();
 	return retval;
 }
 
