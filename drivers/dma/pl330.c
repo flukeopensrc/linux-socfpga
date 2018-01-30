@@ -33,6 +33,7 @@
 #define PL330_MAX_CHAN		8
 #define PL330_MAX_IRQS		32
 #define PL330_MAX_PERI		32
+#define PL330_MAX_BURST_LENGTH		16
 
 enum pl330_cachectrl {
 	CCTRL0,		/* Noncacheable and nonbufferable */
@@ -1213,6 +1214,8 @@ static int _dregs(unsigned dry_run, u8 buf[],
 	int off = 0;
 	int dregs_ccr;
 	
+	if(transfer_length == 0) return off;
+	
 	switch (pxs->desc->rqtype) {
 	case DMA_MEM_TO_DEV:
 		off += _ldst_memtodev(dry_run, &buf[off], pxs, transfer_length, SINGLE);
@@ -1221,15 +1224,12 @@ static int _dregs(unsigned dry_run, u8 buf[],
 		off += _ldst_devtomem(dry_run, &buf[off], pxs, transfer_length, SINGLE);
 		break;
 	case DMA_MEM_TO_MEM:
-		if(transfer_length > 0)
-		{
-			dregs_ccr = pxs->ccr;
-			dregs_ccr &= ~((0xf << CC_SRCBRSTLEN_SHFT) | (0xf << CC_DSTBRSTLEN_SHFT)) ;
-			dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_SRCBRSTLEN_SHFT);
-			dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_DSTBRSTLEN_SHFT);
-			off += _emit_MOV(dry_run, &buf[off], CCR, dregs_ccr);
-			off += _ldst_memtomem(dry_run, &buf[off], pxs, 1);
-		}
+		dregs_ccr = pxs->ccr;
+		dregs_ccr &= ~((0xf << CC_SRCBRSTLEN_SHFT) | (0xf << CC_DSTBRSTLEN_SHFT)) ;
+		dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_SRCBRSTLEN_SHFT);
+		dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_DSTBRSTLEN_SHFT);
+		off += _emit_MOV(dry_run, &buf[off], CCR, dregs_ccr);
+		off += _ldst_memtomem(dry_run, &buf[off], pxs, 1);
 		break;
 	default:
 		off += 0x40000000; /* Scare off the Client */
@@ -2173,14 +2173,24 @@ static int pl330_config(struct dma_chan *chan,
 		if (slave_config->dst_addr_width)
 			pch->burst_sz = __ffs(slave_config->dst_addr_width);
 		if (slave_config->dst_maxburst)
-			pch->burst_len = slave_config->dst_maxburst;
+		{
+			if(slave_config->dst_maxburst > PL330_MAX_BURST_LENGTH)
+				pch->burst_len = PL330_MAX_BURST_LENGTH;
+			else
+				pch->burst_len = slave_config->dst_maxburst;
+		}
 	} else if (slave_config->direction == DMA_DEV_TO_MEM) {
 		if (slave_config->src_addr)
 			pch->fifo_addr = slave_config->src_addr;
 		if (slave_config->src_addr_width)
 			pch->burst_sz = __ffs(slave_config->src_addr_width);
 		if (slave_config->src_maxburst)
-			pch->burst_len = slave_config->src_maxburst;
+		{
+			if(slave_config->src_maxburst > PL330_MAX_BURST_LENGTH)
+				pch->burst_len = PL330_MAX_BURST_LENGTH;
+			else
+				pch->burst_len = slave_config->src_maxburst;
+		}
 	}
 
 	return 0;
@@ -2548,8 +2558,8 @@ static inline int get_burst_len(struct dma_pl330_desc *desc, size_t len)
 	burst_len >>= desc->rqcfg.brst_size;
 
 	/* src/dst_burst_len can't be more than 16 */
-	if (burst_len > 16)
-		burst_len = 16;
+	if (burst_len > PL330_MAX_BURST_LENGTH)
+		burst_len = PL330_MAX_BURST_LENGTH;
 
 	return burst_len;
 }
