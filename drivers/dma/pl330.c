@@ -2178,7 +2178,8 @@ static int pl330_config(struct dma_chan *chan,
 				pch->burst_len = PL330_MAX_BURST_LENGTH;
 			else
 				pch->burst_len = slave_config->dst_maxburst;
-		}
+		}else
+			pch->burst_len = 1;
 	} else if (slave_config->direction == DMA_DEV_TO_MEM) {
 		if (slave_config->src_addr)
 			pch->fifo_addr = slave_config->src_addr;
@@ -2190,7 +2191,8 @@ static int pl330_config(struct dma_chan *chan,
 				pch->burst_len = PL330_MAX_BURST_LENGTH;
 			else
 				pch->burst_len = slave_config->src_maxburst;
-		}
+		}else
+			pch->burst_len = 1;
 	}
 
 	return 0;
