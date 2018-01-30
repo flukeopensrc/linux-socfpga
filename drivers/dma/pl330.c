@@ -1221,12 +1221,15 @@ static int _dregs(unsigned dry_run, u8 buf[],
 		off += _ldst_devtomem(dry_run, &buf[off], pxs, transfer_length, SINGLE);
 		break;
 	case DMA_MEM_TO_MEM:
-		dregs_ccr = pxs->ccr;
-		dregs_ccr &= ~((0xf << CC_SRCBRSTLEN_SHFT) | (0xf << CC_DSTBRSTLEN_SHFT)) ;
-		dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_SRCBRSTLEN_SHFT);
-		dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_DSTBRSTLEN_SHFT);
-		off += _emit_MOV(dry_run, &buf[off], CCR, dregs_ccr);
-		off += _ldst_memtomem(dry_run, &buf[off], pxs, 1);
+		if(transfer_length > 0)
+		{
+			dregs_ccr = pxs->ccr;
+			dregs_ccr &= ~((0xf << CC_SRCBRSTLEN_SHFT) | (0xf << CC_DSTBRSTLEN_SHFT)) ;
+			dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_SRCBRSTLEN_SHFT);
+			dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_DSTBRSTLEN_SHFT);
+			off += _emit_MOV(dry_run, &buf[off], CCR, dregs_ccr);
+			off += _ldst_memtomem(dry_run, &buf[off], pxs, 1);
+		}
 		break;
 	default:
 		off += 0x40000000; /* Scare off the Client */
