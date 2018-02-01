@@ -6,6 +6,6 @@
 #define IBMAJOR 160
 
 /* Version number of package */
-#define VERSION "svn-r1723"
+#define VERSION "svn-r1724"
 
 
