@@ -33,6 +33,7 @@
 #define PL330_MAX_CHAN		8
 #define PL330_MAX_IRQS		32
 #define PL330_MAX_PERI		32
+#define PL330_MAX_BURST_LENGTH		16
 
 enum pl330_cachectrl {
 	CCTRL0,		/* Noncacheable and nonbufferable */
@@ -1140,15 +1141,20 @@ static inline int _ldst_memtomem(unsigned dry_run, u8 buf[],
 }
 
 static inline int _ldst_devtomem(unsigned dry_run, u8 buf[],
-		const struct _xfer_spec *pxs, int cyc)
+		const struct _xfer_spec *pxs, int cyc, enum pl330_cond cond)
 {
 	int off = 0;
 
+	/* do FLUSHP at beginning to clear any stale dma requests before first WFP. */
+	off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 	while (cyc--) {
-		/* do FLUSHP at beginning of cycle to clear any stale dma requests before first data transfer. */
-		off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
-		off += _emit_WFP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
-		off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+		off += _emit_WFP(dry_run, &buf[off], cond, pxs->desc->peri);
+		if(cond == ALWAYS) {
+			off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+			off += _emit_LDP(dry_run, &buf[off], BURST, pxs->desc->peri);
+		}else {
+			off += _emit_LDP(dry_run, &buf[off], cond, pxs->desc->peri);
+		}
 		off += _emit_ST(dry_run, &buf[off], ALWAYS);
 	}
 
@@ -1156,16 +1162,21 @@ static inline int _ldst_devtomem(unsigned dry_run, u8 buf[],
 }
 
 static inline int _ldst_memtodev(unsigned dry_run, u8 buf[],
-		const struct _xfer_spec *pxs, int cyc)
+		const struct _xfer_spec *pxs, int cyc, enum pl330_cond cond)
 {
 	int off = 0;
 
+	/* do FLUSHP at beginning to clear any stale dma requests before first WFP. */
+	off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 	while (cyc--) {
-		/* do FLUSHP at beginning of cycle to clear any stale dma requests before first data transfer. */
-		off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
-		off += _emit_WFP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+		off += _emit_WFP(dry_run, &buf[off], cond, pxs->desc->peri);
 		off += _emit_LD(dry_run, &buf[off], ALWAYS);
-		off += _emit_STP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+		if(cond == ALWAYS) {
+			off += _emit_STP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+			off += _emit_STP(dry_run, &buf[off], BURST, pxs->desc->peri);
+		}else {
+			off += _emit_STP(dry_run, &buf[off], cond, pxs->desc->peri);
+		}
 	}
 
 	return off;
@@ -1175,16 +1186,50 @@ static int _bursts(unsigned dry_run, u8 buf[],
 		const struct _xfer_spec *pxs, int cyc)
 {
 	int off = 0;
-
+	enum pl330_cond cond = BRST_LEN(pxs->ccr) > 1 ? BURST : SINGLE;
+	
 	switch (pxs->desc->rqtype) {
 	case DMA_MEM_TO_DEV:
-		off += _ldst_memtodev(dry_run, &buf[off], pxs, cyc);
+		off += _ldst_memtodev(dry_run, &buf[off], pxs, cyc, cond);
 		break;
 	case DMA_DEV_TO_MEM:
-		off += _ldst_devtomem(dry_run, &buf[off], pxs, cyc);
+		off += _ldst_devtomem(dry_run, &buf[off], pxs, cyc, cond);
 		break;
 	case DMA_MEM_TO_MEM:
 		off += _ldst_memtomem(dry_run, &buf[off], pxs, cyc);
+		break;
+	default:
+		off += 0x40000000; /* Scare off the Client */
+		break;
+	}
+
+	return off;
+}
+
+/* transfer dregs with single transfers to peripheral, or a reduced size burst
+ * for mem-to-mem. */
+static int _dregs(unsigned dry_run, u8 buf[],
+		const struct _xfer_spec *pxs, int transfer_length)
+{
+	int off = 0;
+	int dregs_ccr;
+	
+	if(transfer_length == 0) return off;
+	
+	switch (pxs->desc->rqtype) {
+	case DMA_MEM_TO_DEV:
+		off += _ldst_memtodev(dry_run, &buf[off], pxs, transfer_length, SINGLE);
+		break;
+	case DMA_DEV_TO_MEM:
+		off += _ldst_devtomem(dry_run, &buf[off], pxs, transfer_length, SINGLE);
+		break;
+	case DMA_MEM_TO_MEM:
+		dregs_ccr = pxs->ccr;
+		dregs_ccr &= ~((0xf << CC_SRCBRSTLEN_SHFT) | (0xf << CC_DSTBRSTLEN_SHFT)) ;
+		dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_SRCBRSTLEN_SHFT);
+		dregs_ccr |= (((transfer_length - 1) & 0xf) << CC_DSTBRSTLEN_SHFT);
+		off += _emit_MOV(dry_run, &buf[off], CCR, dregs_ccr);
+		off += _ldst_memtomem(dry_run, &buf[off], pxs, 1);
 		break;
 	default:
 		off += 0x40000000; /* Scare off the Client */
@@ -1279,6 +1324,7 @@ static inline int _setup_loops(unsigned dry_run, u8 buf[],
 	struct pl330_xfer *x = &pxs->desc->px;
 	u32 ccr = pxs->ccr;
 	unsigned long c, bursts = BYTE_TO_BURST(x->bytes, ccr);
+	int num_dregs = (x->bytes - BURST_TO_BYTE(bursts, ccr)) / BRST_SIZE(ccr);
 	int off = 0;
 
 	while (bursts) {
@@ -1286,7 +1332,8 @@ static inline int _setup_loops(unsigned dry_run, u8 buf[],
 		off += _loop(dry_run, &buf[off], &c, pxs);
 		bursts -= c;
 	}
-
+	off += _dregs(dry_run, &buf[off], pxs, num_dregs);
+	
 	return off;
 }
 
@@ -1315,7 +1362,6 @@ static int _setup_req(unsigned dry_run, struct pl330_thread *thrd,
 		unsigned index, struct _xfer_spec *pxs)
 {
 	struct _pl330_req *req = &thrd->req[index];
-	struct pl330_xfer *x;
 	u8 *buf = req->mc_cpu;
 	int off = 0;
 
@@ -1323,11 +1369,6 @@ static int _setup_req(unsigned dry_run, struct pl330_thread *thrd,
 
 	/* DMAMOV CCR, ccr */
 	off += _emit_MOV(dry_run, &buf[off], CCR, pxs->ccr);
-
-	x = &pxs->desc->px;
-	/* Error if xfer length is not aligned at burst size */
-	if (x->bytes % (BRST_SIZE(pxs->ccr) * BRST_LEN(pxs->ccr)))
-		return -EINVAL;
 
 	off += _setup_xfer(dry_run, &buf[off], pxs);
 
@@ -1845,7 +1886,6 @@ static void free_pl330_microcode_mem(struct pl330_dmac *pl330)
 
 static int dmac_alloc_resources(struct pl330_dmac *pl330)
 {
-	int chans = pl330->pcfg.num_chan;
 	int ret;
 
 	/*
@@ -2133,14 +2173,26 @@ static int pl330_config(struct dma_chan *chan,
 		if (slave_config->dst_addr_width)
 			pch->burst_sz = __ffs(slave_config->dst_addr_width);
 		if (slave_config->dst_maxburst)
-			pch->burst_len = slave_config->dst_maxburst;
+		{
+			if(slave_config->dst_maxburst > PL330_MAX_BURST_LENGTH)
+				pch->burst_len = PL330_MAX_BURST_LENGTH;
+			else
+				pch->burst_len = slave_config->dst_maxburst;
+		}else
+			pch->burst_len = 1;
 	} else if (slave_config->direction == DMA_DEV_TO_MEM) {
 		if (slave_config->src_addr)
 			pch->fifo_addr = slave_config->src_addr;
 		if (slave_config->src_addr_width)
 			pch->burst_sz = __ffs(slave_config->src_addr_width);
 		if (slave_config->src_maxburst)
-			pch->burst_len = slave_config->src_maxburst;
+		{
+			if(slave_config->src_maxburst > PL330_MAX_BURST_LENGTH)
+				pch->burst_len = PL330_MAX_BURST_LENGTH;
+			else
+				pch->burst_len = slave_config->src_maxburst;
+		}else
+			pch->burst_len = 1;
 	}
 
 	return 0;
@@ -2508,14 +2560,8 @@ static inline int get_burst_len(struct dma_pl330_desc *desc, size_t len)
 	burst_len >>= desc->rqcfg.brst_size;
 
 	/* src/dst_burst_len can't be more than 16 */
-	if (burst_len > 16)
-		burst_len = 16;
-
-	while (burst_len > 1) {
-		if (!(len % (burst_len << desc->rqcfg.brst_size)))
-			break;
-		burst_len--;
-	}
+	if (burst_len > PL330_MAX_BURST_LENGTH)
+		burst_len = PL330_MAX_BURST_LENGTH;
 
 	return burst_len;
 }
@@ -2584,7 +2630,7 @@ static struct dma_async_tx_descriptor *pl330_prep_dma_cyclic(
 
 		desc->rqtype = direction;
 		desc->rqcfg.brst_size = pch->burst_sz;
-		desc->rqcfg.brst_len = 1;
+		desc->rqcfg.brst_len = pch->burst_len;
 		desc->bytes_requested = period_len;
 		fill_px(&desc->px, dst, src, period_len);
 
@@ -2727,7 +2773,7 @@ pl330_prep_slave_sg(struct dma_chan *chan, struct scatterlist *sgl,
 		}
 
 		desc->rqcfg.brst_size = pch->burst_sz;
-		desc->rqcfg.brst_len = 1;
+		desc->rqcfg.brst_len = pch->burst_len;
 		desc->rqtype = direction;
 		desc->bytes_requested = sg_dma_len(sg);
 	}
