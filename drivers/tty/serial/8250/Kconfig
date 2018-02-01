@@ -284,6 +284,13 @@ config SERIAL_8250_DW
 	  Selecting this option will enable handling of the extra features
 	  present in the Synopsys DesignWare APB UART.
 
+config FLUKE_FN_FAST_UART
+	tristate "Support for fast uart designed by Fluke Norwich for use on Vanquish."
+	depends on SERIAL_8250
+	help
+	  Selecting this option will enable support for the fast uart designed
+	  by Fluke Norwich for use on Vanquish.
+
 config SERIAL_8250_EM
 	tristate "Support for Emma Mobile integrated serial port"
 	depends on SERIAL_8250 && ARM && HAVE_CLK

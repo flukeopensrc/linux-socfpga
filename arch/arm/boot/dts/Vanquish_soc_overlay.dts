@@ -240,14 +240,12 @@
 			}; //end vip@0x100044000 (Vanquish_FPGA_IO_alt_vip_vfr_0)
 
 			Vanquish_FPGA_IO_rs232: serial@0x0004A000 {
-				compatible = "snps,dw-apb-uart-14.0", "snps,dw-apb-uart";	/* appended from boardinfo */
+				compatible = "flk,fn-fast-uart";
 				reg = < 0x0004A000 0x00000200 >;
 				interrupt-parent = < &intc >;
 				interrupts = < 0 46 4 >;
 				clocks = < &Vanquish_FPGA_IO_HPS_CLK >;
-				auto-flow-control = < 1 >;	/* embeddedsw.dts.params.auto-flow-control type NUMBER */
-				clock-frequency = < 60000000 >;	/* embeddedsw.dts.params.clock-frequency type NUMBER */
-				fifo-size = < 128 >;	/* embeddedsw.dts.params.fifo-size type NUMBER */
+				clock-frequency = < 640000000 >;	/* this is BS but the Linux serial core assumes the max baud rate is this clock freq divided by 16. */
 				reg-io-width = < 4 >;	/* embeddedsw.dts.params.reg-io-width type NUMBER */
 				reg-shift = < 2 >;	/* embeddedsw.dts.params.reg-shift type NUMBER */
 				enable-dma = < 1 >;	/* appended from boardinfo */
