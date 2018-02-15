@@ -228,8 +228,8 @@ static int fn_fast_uart_probe(struct platform_device *pdev)
 	data->dma.fn = &fn_fast_uart_dma_filter;
 	data->dma.rxconf.src_maxburst = FN_FAST_BURST_LENGTH;
 	data->dma.rxconf.dst_maxburst = FN_FAST_BURST_LENGTH;
-	data->dma.txconf.src_maxburst = FN_FAST_BURST_LENGTH;
-	data->dma.txconf.dst_maxburst = FN_FAST_BURST_LENGTH;
+	data->dma.txconf.src_maxburst = 1;
+	data->dma.txconf.dst_maxburst = 1;
 
 	
 	uart.port.iotype = UPIO_MEM;
