@@ -653,12 +653,17 @@ static ssize_t fluke_accel_read(gpib_board_t *board, uint8_t *buffer, size_t len
 			--remain;
 			++(*bytes_read);
 			clear_bit( READ_READY_BN, &nec_priv->state );
+			if( test_and_clear_bit( RECEIVED_END_BN, &nec_priv->state ) )
+				*end = 1;
+			else
+				*end = 0;
 		}
 		write_byte( nec_priv, AUX_FH, AUXMR );		
 		clear_bit( RFD_HOLDOFF_BN, &nec_priv->state );
 	}
 	spin_unlock_irqrestore( &board->spinlock, flags );
-
+	if(*end) return 0;
+	
 // 	printk("%s: entering while loop\n", __FUNCTION__);
 	while(remain > 0)
 	{
