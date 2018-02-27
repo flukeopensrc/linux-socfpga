@@ -100,9 +100,13 @@ static int write_timeout(struct uart_port *port, int timeout)
 	return 0;
 }
 
+/* watermark should be at least 1 greater than max burst length, to
+prevent a burst transfer from completely emptying the fifo (and thus
+disabling rx timeouts). */
 static int write_watermark(struct uart_port *port, unsigned long watermark_level)
 {
-	if(watermark_level > FN_FAST_UART_RX_FIFO_SIZE)
+	if(watermark_level > FN_FAST_UART_RX_FIFO_SIZE ||
+		watermark_level <= FN_FAST_BURST_LENGTH)
 		return -EINVAL;
 	writel((watermark_level & 0xFF00) >> 8, port->membase + UART_WATERMARK_MSB);
 	writel(watermark_level & 0xFF, port->membase + UART_WATERMARK_LSB);
@@ -246,9 +250,13 @@ static int fn_fast_uart_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	/* init watermark */
-	write_watermark(&uart.port, FN_FAST_BURST_LENGTH);
-
+	/* Init watermark.  We set it to the max burst size plus one to avoid
+	 completely emptying the fifo with a burst.  This matters because if
+	 the fifo is completely empty it suppresses rx fifo timeout interrupts. */
+	write_watermark(&uart.port, FN_FAST_BURST_LENGTH + 1);
+	/* Init rx timeout to a reasonable 10usec value */
+	write_timeout(&uart.port, 600);
+	
 	data->line = serial8250_register_8250_port(&uart);
 	if (data->line < 0) {
 		err = data->line;
