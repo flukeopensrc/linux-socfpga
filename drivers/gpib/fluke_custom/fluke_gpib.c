@@ -206,19 +206,6 @@ unsigned int fluke_t1_delay( gpib_board_t *board, unsigned int nano_sec )
 	return retval;
 }
 
-static int update_READ_READY_nolock(nec7210_private_t *nec_priv)
-{
-	if(read_byte( nec_priv, ADR0 ) & DATA_IN_STATUS)
-	{
-		set_bit(READ_READY_BN, &nec_priv->state);
-		return 1;
-	}else
-	{
-		clear_bit(READ_READY_BN, &nec_priv->state);
-		return 0;
-	}
-}
-
 static int wait_for_idle(gpib_board_t *board, short wake_on_listener_idle,
 	short wake_on_talker_idle)
 {
@@ -779,9 +766,10 @@ irqreturn_t fluke_gpib_internal_interrupt(gpib_board_t *board)
 	nec7210_private_t *nec_priv = &priv->nec7210_priv;
 	int retval = IRQ_NONE;
 
-	/* unconditional update of READ_READY, to keep things in sync with state changes
-	 * due to dma transfers. */
-	update_READ_READY_nolock(nec_priv);
+	if(read_byte( nec_priv, ADR0 ) & DATA_IN_STATUS)
+	{
+		set_bit(READ_READY_BN, &nec_priv->state);
+	}
 
 	status0 = fluke_paged_read_byte(priv, ISR0_IMR0, ISR0_IMR0_PAGE);
 	status1 = read_byte( nec_priv, ISR1 );
@@ -803,13 +791,15 @@ irqreturn_t fluke_gpib_internal_interrupt(gpib_board_t *board)
 	}
 */
 
-	/* if we saw an end interrupt, update the state of READ_READY again (after the read of ISR1) to make sure 
-	 * READ_READY and END are always in sync (when DI interrupts are disabled, we might have seen the END
-	 * but not the DI interrupt).  If END is set, we know we are in rfd holdoff, so no new
-	 * byte will arrive between seeing END and updating READ_READY. */
-	if(status1 & HR_END)
+	if(read_byte( nec_priv, ADR0 ) & DATA_IN_STATUS)
 	{
-		update_READ_READY_nolock(nec_priv);
+		if(test_bit(RFD_HOLDOFF_BN, &nec_priv->state))
+		{
+			set_bit(READ_READY_BN, &nec_priv->state);
+		}
+	}else
+	{
+		clear_bit(READ_READY_BN, &nec_priv->state);
 	}
 
 	if( retval == IRQ_HANDLED )
