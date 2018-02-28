@@ -206,7 +206,7 @@ unsigned int fluke_t1_delay( gpib_board_t *board, unsigned int nano_sec )
 	return retval;
 }
 
-static int update_READ_READY(nec7210_private_t *nec_priv)
+static int update_READ_READY_nolock(nec7210_private_t *nec_priv)
 {
 	if(read_byte( nec_priv, ADR0 ) & DATA_IN_STATUS)
 	{
@@ -525,6 +525,8 @@ static int fluke_dma_read(gpib_board_t *board, uint8_t *buffer,
 	dma_addr_t bus_address;
 	struct dma_async_tx_descriptor *tx_desc;
 	dma_cookie_t dma_cookie;
+	int i;
+	static const int timeout = 10;
 	
 	// 	printk("%s: enter, bus_address=0x%x, length=%i\n", __FUNCTION__, (unsigned)bus_address,
 // 		   (int)length);
@@ -584,10 +586,27 @@ static int fluke_dma_read(gpib_board_t *board, uint8_t *buffer,
 		retval = -ETIMEDOUT;
 	if(test_bit(DEV_CLEAR_BN, &nec_priv->state))
 		retval = -EINTR;
+	
+	/* If we woke up because of end, wait until the dma transfer has pulled
+	 * the data byte associated with the end before we cancel the dma transfer. */
+	if(test_bit(RECEIVED_END_BN, &nec_priv->state))
+	{ 
+		for (i = 0; i < timeout; ++i)
+		{
+			if(test_bit(DMA_READ_IN_PROGRESS_BN, &nec_priv->state) == 0) break;
+			if( (read_byte( nec_priv, ADR0 ) & DATA_IN_STATUS) == 0) break;
+			udelay(10);
+		}
+		if(i == timeout)
+		{
+			printk("fluke_gpib: timedout out waiting for dma to transfer end data byte.\n");
+		}
+	}
+	
 	// stop the dma transfer
 	nec7210_set_reg_bits(nec_priv, IMR2, HR_DMAI, 0);
-	/* delay a little just to make sure any bytes in dma controller's fifo get
-	 written to memory before we disable it */
+	/* paranoid delay a little just to make sure any bytes in dma controller's fifo get
+	 written to memory before we disable it (probably unnecessary) */
 	udelay(10);
 	residue = fluke_get_dma_residue(e_priv->dma_channel, dma_cookie);
 	BUG_ON(residue > length);
@@ -607,7 +626,6 @@ static int fluke_dma_read(gpib_board_t *board, uint8_t *buffer,
 	 * byte still sitting on the cb7210.
 	 */
 	spin_lock_irqsave(&board->spinlock, flags);
-	update_READ_READY(nec_priv);
 	if(test_bit(READ_READY_BN, &nec_priv->state) == 0)
 	{
 		// There is no byte sitting on the cb7210.  If we
@@ -631,7 +649,6 @@ static ssize_t fluke_accel_read(gpib_board_t *board, uint8_t *buffer, size_t len
 	size_t transfer_size;
 	int retval = 0;
 	int dma_nbytes;
-	unsigned long flags;
 	
 /*	printk("%s: enter, buffer=0x%p, length=%i\n", __FUNCTION__,
 		   buffer, (int)length);
@@ -639,31 +656,10 @@ static ssize_t fluke_accel_read(gpib_board_t *board, uint8_t *buffer, size_t len
 	*end = 0;
 	*bytes_read = 0;
 	
-	if(remain == 0) return 0;
-	
 	clear_bit(DEV_CLEAR_BN, &nec_priv->state); // XXX FIXME
-
-	/* deal with rfd holdoff and possible byte already sitting in chip */
-	spin_lock_irqsave( &board->spinlock, flags );
-	if(test_bit( RFD_HOLDOFF_BN, &nec_priv->state ))
-	{
-		if(update_READ_READY(nec_priv))
-		{
-			*(buffer++) = read_byte( nec_priv, DIR );
-			--remain;
-			++(*bytes_read);
-			clear_bit( READ_READY_BN, &nec_priv->state );
-			if( test_and_clear_bit( RECEIVED_END_BN, &nec_priv->state ) )
-				*end = 1;
-			else
-				*end = 0;
-		}
-		write_byte( nec_priv, AUX_FH, AUXMR );		
-		clear_bit( RFD_HOLDOFF_BN, &nec_priv->state );
-	}
-	spin_unlock_irqrestore( &board->spinlock, flags );
-	if(*end) return 0;
 	
+	nec7210_release_rfd_holdoff(board, nec_priv);
+
 // 	printk("%s: entering while loop\n", __FUNCTION__);
 	while(remain > 0)
 	{
@@ -783,7 +779,9 @@ irqreturn_t fluke_gpib_internal_interrupt(gpib_board_t *board)
 	nec7210_private_t *nec_priv = &priv->nec7210_priv;
 	int retval = IRQ_NONE;
 
-	update_READ_READY(nec_priv);
+	/* unconditional update of READ_READY, to keep things in sync with state changes
+	 * due to dma transfers. */
+	update_READ_READY_nolock(nec_priv);
 
 	status0 = fluke_paged_read_byte(priv, ISR0_IMR0, ISR0_IMR0_PAGE);
 	status1 = read_byte( nec_priv, ISR1 );
@@ -804,6 +802,15 @@ irqreturn_t fluke_gpib_internal_interrupt(gpib_board_t *board)
 		printk("fluke: status1 0x%x, status2 0x%x\n", status1, status2);
 	}
 */
+
+	/* if we saw an end interrupt, update the state of READ_READY again (after the read of ISR1) to make sure 
+	 * READ_READY and END are always in sync (when DI interrupts are disabled, we might have seen the END
+	 * but not the DI interrupt).  If END is set, we know we are in rfd holdoff, so no new
+	 * byte will arrive between seeing END and updating READ_READY. */
+	if(status1 & HR_END)
+	{
+		update_READ_READY_nolock(nec_priv);
+	}
 
 	if( retval == IRQ_HANDLED )
 	{
