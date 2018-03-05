@@ -957,7 +957,7 @@ static int fluke_attach_impl(gpib_board_t *board, const gpib_board_config_t *con
 	
 	if(!fluke_gpib_pdev)
 	{
-		printk("No gpib platform device was found, attach failed.");
+		printk("No gpib platform device was found, attach failed.\n");
 		return -ENODEV;
 	}
 	
