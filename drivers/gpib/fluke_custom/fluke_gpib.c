@@ -206,16 +206,29 @@ unsigned int fluke_t1_delay( gpib_board_t *board, unsigned int nano_sec )
 	return retval;
 }
 
-static int wait_for_idle(gpib_board_t *board, short wake_on_listener_idle,
-	short wake_on_talker_idle)
+static int lacs_or_read_ready(gpib_board_t *board)
+{
+	const fluke_private_t *e_priv = board->private_data;
+	const nec7210_private_t *nec_priv = &e_priv->nec7210_priv;
+	unsigned long flags;
+	int retval;
+	
+	spin_lock_irqsave(&board->spinlock, flags);
+	retval = test_bit(LACS_NUM, &board->status) || test_bit(READ_READY_BN, &nec_priv->state);
+	spin_unlock_irqrestore(&board->spinlock, flags);
+	return retval;
+}
+
+/* Wait until it is possible for a read to do something useful.  This
+ * is not essential, it only exists to prevent RFD holdoff from being released pointlessly. */
+static int wait_for_read(gpib_board_t *board)
 {
 	fluke_private_t *e_priv = board->private_data;
 	nec7210_private_t *nec_priv = &e_priv->nec7210_priv;
 	int retval = 0;
-//	printk("%s: enter\n", __FUNCTION__);
+
 	if(wait_event_interruptible(board->wait,
-		(wake_on_listener_idle && test_bit(LACS_NUM, &board->status) == 0) ||
-		(wake_on_talker_idle && test_bit(TACS_NUM, &board->status) == 0) ||
+		lacs_or_read_ready(board) ||
 		test_bit(DEV_CLEAR_BN, &nec_priv->state) ||
 		test_bit(TIMO_NUM, &board->status)))
 	{
@@ -225,7 +238,6 @@ static int wait_for_idle(gpib_board_t *board, short wake_on_listener_idle,
 		retval = -ETIMEDOUT;
 	if(test_and_clear_bit(DEV_CLEAR_BN, &nec_priv->state))
 		retval = -EINTR;
-//	printk("%s: exit, retval=%i\n", __FUNCTION__, retval);
 	return retval;
 }
 
@@ -275,7 +287,7 @@ static int wait_for_data_out_ready(gpib_board_t *board)
 //	printk("%s: enter\n", __FUNCTION__);
 
 	if(wait_event_interruptible(board->wait,
-		source_handshake_is_sgns(e_priv) ||
+		(test_bit(TACS_NUM, &board->status) && source_handshake_is_sgns(e_priv)) ||
 		test_bit(DEV_CLEAR_BN, &nec_priv->state) ||
 		test_bit(TIMO_NUM, &board->status)))
 	{
@@ -347,12 +359,7 @@ static int fluke_dma_write(gpib_board_t *board,
 	dmaengine_terminate_all(e_priv->dma_channel);
 	// write-clear counter
 	writel(0x0, e_priv->write_transfer_counter);
-	retval = wait_for_idle(board, 1, 0);
-	if(retval < 0) 
-	{
-//		printk("fluke_gpib: err %i waiting for idle in dma write\n", retval);
-		return retval;
-	}
+
 	memcpy(e_priv->dma_buffer, buffer, length);
 	address = dma_map_single(NULL, e_priv->dma_buffer,
 		 length, DMA_TO_DEVICE);
@@ -447,6 +454,10 @@ static int fluke_accel_write(gpib_board_t *board,
 	while(dma_remainder > 0)
 	{
 		size_t num_bytes;
+
+		retval = wait_for_data_out_ready(board);
+		if(retval < 0) break;
+
 		transfer_size = (e_priv->dma_buffer_size < dma_remainder) ? 
 			e_priv->dma_buffer_size : dma_remainder;
 		retval = fluke_dma_write(board, buffer, transfer_size, &num_bytes);
@@ -523,8 +534,6 @@ static int fluke_dma_read(gpib_board_t *board, uint8_t *buffer,
 	if(length == 0)
 		return 0;
 
-	retval = wait_for_idle(board, 0, 1);
-	if(retval < 0) return retval;
 	bus_address = dma_map_single(NULL, e_priv->dma_buffer,
 		length, DMA_FROM_DEVICE);
 
@@ -645,6 +654,9 @@ static ssize_t fluke_accel_read(gpib_board_t *board, uint8_t *buffer, size_t len
 	
 	clear_bit(DEV_CLEAR_BN, &nec_priv->state); // XXX FIXME
 	
+	retval = wait_for_read(board);
+	if(retval < 0) return retval;
+
 	nec7210_release_rfd_holdoff(board, nec_priv);
 
 // 	printk("%s: entering while loop\n", __FUNCTION__);
