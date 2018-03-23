@@ -1149,13 +1149,10 @@ static inline int _ldst_devtomem(unsigned dry_run, u8 buf[],
 	off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 	while (cyc--) {
 		off += _emit_WFP(dry_run, &buf[off], cond, pxs->desc->peri);
-		if(cond == ALWAYS) {
-			off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
-			off += _emit_LDP(dry_run, &buf[off], BURST, pxs->desc->peri);
-		}else {
-			off += _emit_LDP(dry_run, &buf[off], cond, pxs->desc->peri);
-		}
-		off += _emit_ST(dry_run, &buf[off], ALWAYS);
+		off += _emit_LDP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+		off += _emit_LDP(dry_run, &buf[off], BURST, pxs->desc->peri);
+		off += _emit_ST(dry_run, &buf[off], SINGLE);
+		off += _emit_ST(dry_run, &buf[off], BURST);
 	}
 
 	return off;
@@ -1170,13 +1167,10 @@ static inline int _ldst_memtodev(unsigned dry_run, u8 buf[],
 	off += _emit_FLUSHP(dry_run, &buf[off], pxs->desc->peri);
 	while (cyc--) {
 		off += _emit_WFP(dry_run, &buf[off], cond, pxs->desc->peri);
-		off += _emit_LD(dry_run, &buf[off], ALWAYS);
-		if(cond == ALWAYS) {
-			off += _emit_STP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
-			off += _emit_STP(dry_run, &buf[off], BURST, pxs->desc->peri);
-		}else {
-			off += _emit_STP(dry_run, &buf[off], cond, pxs->desc->peri);
-		}
+		off += _emit_LD(dry_run, &buf[off], SINGLE);
+		off += _emit_LD(dry_run, &buf[off], BURST);
+		off += _emit_STP(dry_run, &buf[off], SINGLE, pxs->desc->peri);
+		off += _emit_STP(dry_run, &buf[off], BURST, pxs->desc->peri);
 	}
 
 	return off;
