@@ -17,7 +17,10 @@
  * LCR is written whilst busy.  If it is, then a busy detect interrupt is
  * raised, the LCR needs to be rewritten and the uart status register read.
  */
+
+#include <asm/byteorder.h>
 #include <linux/device.h>
+#include <linux/dma-mapping.h>
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/serial_8250.h>
@@ -27,9 +30,8 @@
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/clk.h>
 #include <linux/reset.h>
-#include <asm/byteorder.h>
+#include <linux/tty_flip.h>
 
 #include "8250.h"
 #include "ioctl_8250_fast_uart.h"
@@ -47,10 +49,16 @@
 #define UART_TIMEOUT_MSB		0x34
 
 struct fn_fast_uart_data {
-	int			line;
+	int line;
 	struct uart_8250_dma	dma;
 	struct uart_ops ops;
+	unsigned int rx_xfer_length;
 };
+
+static struct fn_fast_uart_data* get_private_data(struct uart_port *up)
+{
+	return (struct fn_fast_uart_data*)up->private_data;
+}
 
 /* Hardware has fixed divisor and doesn't support divisor latch access bit.
  * Since it can't enable writes to uart divisor latch registers, make it a no-op */
@@ -69,6 +77,27 @@ static unsigned int read_watermark(struct uart_port *port)
 	watermark_level = (watermark_level & 0x1F) << 8;
 	watermark_level |= readl(port->membase + UART_WATERMARK_LSB);
 	return watermark_level;
+}
+
+/* rx fifo is annoyingly split across two ports, so we have to make
+ * sure the msb and lsb are consistent. */
+static unsigned int rx_fifo_level(struct uart_port *port)
+{
+	unsigned int old_fifo_level_msb = 0;
+	unsigned int fifo_level_msb = 0;
+	unsigned int fifo_level_lsb = 0;
+	
+	old_fifo_level_msb = readl(port->membase + UART_FIFO_MSB);
+	while(1)
+	{
+		fifo_level_lsb = readl(port->membase + UART_FIFO_LSB);
+		fifo_level_msb = readl(port->membase + UART_FIFO_MSB);
+		if (old_fifo_level_msb == fifo_level_msb) 
+			break;
+		old_fifo_level_msb = fifo_level_msb;
+	}
+	
+	return ((fifo_level_msb & 0xff) << 8) | (fifo_level_lsb & 0xff);
 }
 
 static unsigned int read_timeout(struct uart_port *port)
@@ -140,6 +169,102 @@ static unsigned int fn_fast_uart_serial_in(struct uart_port *p, int offset)
 static bool fn_fast_uart_dma_filter(struct dma_chan *chan, void *param)
 {
 	return false;
+}
+
+static void fn_fast_uart_dma_rx_complete(void *param)
+{
+	struct uart_8250_port *p = param;
+	struct uart_8250_dma *dma = p->dma;
+	struct tty_port *tty_port = &p->port.state->port;
+	struct dma_tx_state state;
+	int count;
+	unsigned long flags;
+	
+	spin_lock_irqsave(&p->port.lock, flags);
+
+	dma_sync_single_for_cpu(dma->rxchan->device->dev, dma->rx_addr,
+		get_private_data(&p->port)->rx_xfer_length, DMA_FROM_DEVICE);
+
+	dma->rx_running = 0;
+	// re-enable rx interrupts
+	fn_fast_uart_serial_out(&p->port, UART_IER, fn_fast_uart_serial_in(&p->port, UART_IER) | UART_IER_RDI);
+
+	dmaengine_tx_status(dma->rxchan, dma->rx_cookie, &state);
+
+	count = get_private_data(&p->port)->rx_xfer_length - state.residue;
+
+	tty_insert_flip_string(tty_port, dma->rx_buf, count);
+	p->port.icount.rx += count;
+
+	tty_flip_buffer_push(tty_port);
+
+	spin_unlock_irqrestore(&p->port.lock, flags);
+}
+
+/*
+ * We provide a custom rx_dma function because the pl330 does not support
+ * dmaengine_pause() at the hardware level (the pl330.c driver support for pause is
+ * broken and can cause corrupt or lost data).  The standard 8250
+ * serial8250_rx_dma function requires pauses to work since it will
+ * interrupt rx dma transfers on timeouts.  Our custom dma transfer
+ * simply limits the length of the dma transfer to the number of bytes
+ * currently in the uart's sizeable rx fifo (minus one), and thus
+ * will always complete without needing to be paused.
+ */
+static int fn_fast_uart_rx_dma(struct uart_8250_port *p, unsigned int iir)
+{
+	struct uart_8250_dma		*dma = p->dma;
+	struct dma_async_tx_descriptor	*desc;
+	unsigned int fifo_level;
+	
+	switch (iir & 0x3f) {
+	case UART_IIR_RLSI:
+		/* 8250_core handles errors and break interrupts */
+		return -EIO;
+	case UART_IIR_RX_TIMEOUT:
+		if (dma->rx_running)
+			/* should never happen */
+			WARN_ON(1);
+			break;
+		else
+			/* returning error will cause core to empty fifo with cpu */
+			return -ETIMEDOUT;
+	default:
+		break;
+	}
+
+	if (dma->rx_running)
+		return 0;
+
+	fifo_level = rx_fifo_level(&p->port);
+	// hardware only generates dma requests while there is more than 1 byte in fifo
+	if (fifo_level <= 1) 
+		return 0;
+	get_private_data(&p->port)->rx_xfer_length = fifo_level - 1;
+	if(get_private_data(&p->port)->rx_xfer_length > dma->rx_size)
+		get_private_data(&p->port)->rx_xfer_length = dma->rx_size;
+	
+	desc = dmaengine_prep_slave_single(dma->rxchan, dma->rx_addr,
+		get_private_data(&p->port)->rx_xfer_length, DMA_DEV_TO_MEM,
+		DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+	if (!desc)
+		return -EBUSY;
+
+	dma->rx_running = 1;
+	// disable rx interrupts while dma is running
+	fn_fast_uart_serial_out(&p->port, UART_IER, fn_fast_uart_serial_in(&p->port, UART_IER) & ~UART_IER_RDI);
+	
+	desc->callback = fn_fast_uart_dma_rx_complete;
+	desc->callback_param = p;
+
+	dma->rx_cookie = dmaengine_submit(desc);
+
+	dma_sync_single_for_device(dma->rxchan->device->dev, dma->rx_addr,
+		get_private_data(&p->port)->rx_xfer_length, DMA_FROM_DEVICE);
+
+	dma_async_issue_pending(dma->rxchan);
+
+	return 0;
 }
 
 static void fn_fast_uart_setup_port(struct uart_8250_port *up)
@@ -234,7 +359,7 @@ static int fn_fast_uart_probe(struct platform_device *pdev)
 	data->dma.rxconf.dst_maxburst = FN_FAST_BURST_LENGTH;
 	data->dma.txconf.src_maxburst = 1;
 	data->dma.txconf.dst_maxburst = 1;
-
+	data->dma.rx_dma = &fn_fast_uart_rx_dma;
 	
 	uart.port.iotype = UPIO_MEM;
 	uart.port.serial_in = fn_fast_uart_serial_in;
