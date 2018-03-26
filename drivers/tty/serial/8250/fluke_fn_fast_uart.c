@@ -187,7 +187,8 @@ static void fn_fast_uart_dma_rx_complete(void *param)
 
 	dma->rx_running = 0;
 	// re-enable rx interrupts
-	fn_fast_uart_serial_out(&p->port, UART_IER, fn_fast_uart_serial_in(&p->port, UART_IER) | UART_IER_RDI);
+	p->ier |= UART_IER_RDI;
+	fn_fast_uart_serial_out(&p->port, UART_IER, p->ier);
 
 	dmaengine_tx_status(dma->rxchan, dma->rx_cookie, &state);
 
@@ -254,7 +255,8 @@ static int fn_fast_uart_rx_dma(struct uart_8250_port *p, unsigned int iir)
 
 	dma->rx_running = 1;
 	// disable rx interrupts while dma is running
-	fn_fast_uart_serial_out(&p->port, UART_IER, fn_fast_uart_serial_in(&p->port, UART_IER) & ~UART_IER_RDI);
+	p->ier &= ~UART_IER_RDI;
+	fn_fast_uart_serial_out(&p->port, UART_IER, p->ier);
 	
 	desc->callback = fn_fast_uart_dma_rx_complete;
 	desc->callback_param = p;
