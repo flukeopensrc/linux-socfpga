@@ -223,11 +223,7 @@ static int fn_fast_uart_rx_dma(struct uart_8250_port *p, unsigned int iir)
 		/* 8250_core handles errors and break interrupts */
 		return -EIO;
 	case UART_IIR_RX_TIMEOUT:
-		if (dma->rx_running)
-		{	/* should never happen */
-			WARN_ON(1);
-			break;
-		}else
+		if (dma->rx_running == 0)
 		{	
 			/* returning error will cause core to empty fifo with cpu */
 			return -ETIMEDOUT;
