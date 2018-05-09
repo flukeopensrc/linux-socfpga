@@ -224,21 +224,6 @@
 				clocks = < &Vanquish_FPGA_IO_HPS_CLK >;
 			}; //end fgpib@0x100049800 (Vanquish_FPGA_IO_fgpib_0)
 
-			Vanquish_FPGA_IO_alt_vip_vfr_0: vip@0x00044000 {
-				compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
-				reg = < 0x00044000 0x00000080 >;
-				interrupt-parent = < &intc >;
-				interrupts = < 0 43 4 >;
-				clocks = < &Vanquish_FPGA_IO_HPS_CLK &Vanquish_FPGA_IO_HPS_CLK >;
-				clock-names = "clock_reset", "clock_master";
-				max-width = < 480 >;	/* MAX_IMAGE_WIDTH type NUMBER */
-				max-height = < 272 >;	/* MAX_IMAGE_HEIGHT type NUMBER */
-				bits-per-color = < 8 >;	/* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
-				colors-per-beat = < 4 >;	/* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
-				beats-per-pixel = < 1 >;	/* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
-				mem-word-width = < 128 >;	/* MEM_PORT_WIDTH type NUMBER */
-			}; //end vip@0x100044000 (Vanquish_FPGA_IO_alt_vip_vfr_0)
-
 			Vanquish_FPGA_IO_rs232: serial@0x0004A000 {
 				compatible = "flk,fn-fast-uart";
 				reg = < 0x0004A000 0x00000200 >;
