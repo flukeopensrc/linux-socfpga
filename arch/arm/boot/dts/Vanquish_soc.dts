@@ -60,7 +60,7 @@
 
         Vanquish_FPGA_IO_alt_vip_vfr_0: vip@0x00044000 {
             compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
-            reg = < 0x00044000 0x00000080 >;
+            reg = < 0xff244000 0x00000080 >;
             interrupt-parent = < &intc >;
             interrupts = < 0 43 4 >;
             clocks = < &Vanquish_FPGA_IO_HPS_CLK &Vanquish_FPGA_IO_HPS_CLK >;
