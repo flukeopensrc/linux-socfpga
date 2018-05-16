@@ -35,21 +35,6 @@
 				clocks = < &clk_0 >;
 			}; //end serial@0x100020000 (jtag_uart)
 
-			Richmond_FPGA_IO_alt_vip_vfr_0: vip@0x100044000 {
-				compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
-				reg = < 0x00044000 0x00000080 >;
-				interrupt-parent = < &intc >;
-				interrupts = < 0 43 4 >;
-				clocks = < &Richmond_FPGA_IO_HPS_CLK &Richmond_FPGA_IO_HPS_CLK >;
-				clock-names = "clock_reset", "clock_master";
-				max-width = < 640 >;	/* MAX_IMAGE_WIDTH type NUMBER */
-				max-height = < 480 >;	/* MAX_IMAGE_HEIGHT type NUMBER */
-				bits-per-color = < 8 >;	/* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
-				colors-per-beat = < 4 >;	/* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
-				beats-per-pixel = < 1 >;	/* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
-				mem-word-width = < 128 >;	/* MEM_PORT_WIDTH type NUMBER */
-			}; //end vip@0x100044000 (Richmond_FPGA_IO_alt_vip_vfr_0)
-
 			Richmond_FPGA_IO_sysid: sysid@0x100049540 {
 				compatible = "altr,sysid-14.0", "altr,sysid-1.0";
 				reg = < 0x00049540 0x00000008 >;
