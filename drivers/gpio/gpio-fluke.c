@@ -202,10 +202,10 @@ static ssize_t hw_write (struct file *filp, const char __user *buf, size_t count
     else {
         direction = (fgpiop->direction & 0x100) ? 0xff : fgpiop->direction; 
         iowrite32(direction, (int*)(fgpiop->mapbase + 4)); // try to make everything writeable
-        printk (KERN_INFO "fgpio: write function direction bits = %x\n", direction);
+        // printk (KERN_INFO "fgpio: write function direction bits = %x\n", direction);
         for (i = 0; i < count; i++) {
             data = tbuf[i] & fgpiop->bits & direction;
-            printk (KERN_INFO "fgpio: write byte %x of %x, addr = %x, data = %x\n", (i + 1), count, (int)fgpiop->mapbase, data);
+            // printk (KERN_INFO "fgpio: write byte %x of %x, addr = %x, data = %x\n", (i + 1), count, (int)fgpiop->mapbase, data);
             iowrite32(data, (int*)fgpiop->mapbase);
         }
         retval = count;
