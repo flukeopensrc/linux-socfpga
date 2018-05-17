@@ -86,4 +86,8 @@ config LOGO_FLUKE_CLUT224
     bool "224-color Fluke Generic Logo"
     default y
 
+config LOGO_FLUKE_640x480_CLUT224
+    bool "224-color Fluke Generic Logo"
+    default y
+
 endif # LOGO
