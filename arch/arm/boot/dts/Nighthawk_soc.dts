@@ -59,7 +59,7 @@
         reg = < 0xff244000 0x00000080 >;
         interrupt-parent = < &intc >;
         interrupts = < 0 43 4 >;
-        clocks = < &Nighthawk_FPGA_IO_HPS_CLK &Nighthawk_FPGA_IO_HPS_CLK >;
+        clocks = <&Nighthawk_FPGA_IO_HPS_CLK>,  <&Nighthawk_FPGA_IO_HPS_CLK>;
         clock-names = "clock_reset", "clock_master";
         max-width = < 800 >;    /* MAX_IMAGE_WIDTH type NUMBER */
         max-height = < 480 >;   /* MAX_IMAGE_HEIGHT type NUMBER */
