@@ -186,7 +186,7 @@
         }; //end partition@3800000 (part2)
 
         part3: partition@3e00000 {
-            label = "Aux JFFS2 Image";	/* appended from boardinfo */
+            label = "Aux FS Image";	/* appended from boardinfo */
             reg = < 0x01000000 0x03000000 >;	/* appended from boardinfo */
         }; //end partition@3e00000 (part3)
     };
@@ -207,7 +207,7 @@
 		cdns,tslch-ns = <4>;
 
         part4: partition@0 {
-            label = "Root FS (jffs2)";	/* appended from boardinfo */
+            label = "Root FS (ubifs)";	/* appended from boardinfo */
             reg = < 0x00000000 0x10000000 >;	/* appended from boardinfo */
         }; //end partition@0 (part4)
     }; //end n25q02@1 (flash1)		
