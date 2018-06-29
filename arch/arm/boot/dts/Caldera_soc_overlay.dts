@@ -32,7 +32,7 @@
 
 			jtag_uart: serial@0x100020000 {
 				compatible = "altr,juart-17.0", "altr,juart-1.0";
-				reg = <0x00000001 0x00020000 0x00000008>;
+				reg = <0x00020000 0x00000008>;
 				interrupt-parent = <&intc>;
 				interrupts = <0 42 4>;
 				clocks = <&clk_0>;
@@ -40,7 +40,7 @@
 
 			Caldera_FPGA_IO_rs232: serial@0x10004a000 {
 				compatible = "snps,dw-apb-uart-14.0", "snps,dw-apb-uart";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a000 0x00000200>;
+				reg = <0x0004a000 0x00000200>;
 				interrupt-parent = <&intc>;
 				interrupts = <0 44 4>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
@@ -53,7 +53,7 @@
 
 			Caldera_FPGA_IO_fkeypad_0: fkeypad@0x10004a380 {
 				compatible = "flk,fkeypad-1.0";
-				reg = <0x00000001 0x0004a380 0x00000008>;
+				reg = <0x0004a380 0x00000008>;
 				interrupt-parent = <&intc>;
 				interrupts = <0 40 4>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
@@ -61,14 +61,14 @@
 
 			Caldera_FPGA_IO_vfb_180_0: unknown@0x10004a700 {
 				compatible = "unknown,unknown-2.0";
-				reg = <0x00000001 0x0004a700 0x00000080>;
+				reg = <0x0004a700 0x00000080>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK &Caldera_FPGA_IO_HPS_CLK>;
 				clock-names = "avs_clock", "clk";
 			}; //end unknown@0x10004a700 (Caldera_FPGA_IO_vfb_180_0)
 
 			Caldera_FPGA_IO_sysid: sysid@0x100049540 {
 				compatible = "altr,sysid-17.0", "altr,sysid-1.0";
-				reg = <0x00000001 0x00049540 0x00000008>;
+				reg = <0x00049540 0x00000008>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				id = <1664196610>;	/* embeddedsw.dts.params.id type NUMBER */
 				timestamp = <1530048163>;	/* embeddedsw.dts.params.timestamp type NUMBER */
@@ -76,7 +76,7 @@
 
 			Caldera_FPGA_IO_Port_A: gpio@0x100049a00 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x00049a00 0x00000020>;
+				reg = <0x00049a00 0x00000020>;
 				interrupt-parent = <&intc>;
 				interrupts = <0 43 1>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
@@ -94,7 +94,7 @@
 
 			Caldera_FPGA_IO_led_pio: gpio@0x100049180 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x00049180 0x00000020>;
+				reg = <0x00049180 0x00000020>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -106,7 +106,7 @@
 
 			Caldera_FPGA_IO_LCD_PWM_DAC: gpio@0x100049cc0 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x00049cc0 0x00000020>;
+				reg = <0x00049cc0 0x00000020>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <127>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -118,13 +118,13 @@
 
 			Caldera_FPGA_IO_Beeper_Counter: unknown@0x100049b00 {
 				compatible = "altr,cntr-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x00049b00 0x00000020>;
+				reg = <0x00049b00 0x00000020>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 			}; //end unknown@0x100049b00 (Caldera_FPGA_IO_Beeper_Counter)
 
 			Caldera_FPGA_IO_Beeper_Enable: gpio@0x100049b40 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x00049b40 0x00000020>;
+				reg = <0x00049b40 0x00000020>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -136,7 +136,7 @@
 
 			Caldera_FPGA_IO_LCD_PWM_FREQ: gpio@0x100049ec0 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x00049ec0 0x00000020>;
+				reg = <0x00049ec0 0x00000020>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <181>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -148,7 +148,7 @@
 
 			Caldera_FPGA_IO_LP_LED_RED: gpio@0x10004a200 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a200 0x00000010>;
+				reg = <0x0004a200 0x00000010>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -160,7 +160,7 @@
 
 			Caldera_FPGA_IO_LP_LED_GREEN: gpio@0x10004a240 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a240 0x00000010>;
+				reg = <0x0004a240 0x00000010>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -172,7 +172,7 @@
 
 			Caldera_FPGA_IO_LP_LED_BLUE: gpio@0x10004a280 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a280 0x00000010>;
+				reg = <0x0004a280 0x00000010>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -184,7 +184,7 @@
 
 			Caldera_FPGA_IO_KP_LED: gpio@0x10004a2c0 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a2c0 0x00000010>;
+				reg = <0x0004a2c0 0x00000010>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -196,7 +196,7 @@
 
 			Caldera_FPGA_IO_fpga_reset: gpio@0x10004a600 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a600 0x00000010>;
+				reg = <0x0004a600 0x00000010>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
@@ -208,7 +208,7 @@
 
 			Caldera_FPGA_IO_Backplane_GPIO: gpio@0x10004a800 {
 				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
-				reg = <0x00000001 0x0004a800 0x00000020>;
+				reg = <0x0004a800 0x00000020>;
 				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
 				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
 				#gpio-cells = <2>;
