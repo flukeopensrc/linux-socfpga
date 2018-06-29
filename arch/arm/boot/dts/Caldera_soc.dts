@@ -34,7 +34,6 @@
 	aliases {
 		serial0 = &uart0;
 		serial1 = &uart1;
-		serial2 = &uart2;
 		ethernet0 = &gmac1;
 	}; //end aliases
 
@@ -179,10 +178,6 @@
 };
 
 &uart1 {
-    status = "okay";
-};
-
-&uart2 {
     status = "okay";
 };
 
