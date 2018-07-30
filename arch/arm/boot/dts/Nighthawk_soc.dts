@@ -210,10 +210,10 @@
         }; //end partition@3e00000 (part3)
     };
 
-    flash1: n25q00@1 {
+    flash1: n25q02@1 {
         #address-cells = <1>;
         #size-cells = <1>;
-        compatible = "n25q00";
+        compatible = "n25q02";
         reg = <1>;      /* chip select */
         spi-max-frequency = <50000000>;
 
@@ -227,7 +227,7 @@
 
         part4: partition@0 {
                     label = "Flash 1 Root FS"; /* appended from boardinfo */
-                    reg = < 0x00000000 0x08000000 >;    /* appended from boardinfo */
+                    reg = < 0x00000000 0x10000000 >;    /* appended from boardinfo */
         }; //end partition@0 (part4)
     }; //end n25q00@1 (flash1)
 };
