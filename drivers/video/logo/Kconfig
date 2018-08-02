@@ -82,7 +82,7 @@ config LOGO_M32R_CLUT224
 	depends on M32R
 	default y
 
-config LOGO_FLUKE_640X480_CLUT224
+config LOGO_FLUKE_800X480_CLUT224
     bool "224-color Fluke Generic Logo"
     default y
 

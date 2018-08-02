@@ -36,7 +36,7 @@ static int __init fb_logo_late_init(void)
 
 late_initcall(fb_logo_late_init);
 
-extern const struct linux_logo logo_fluke_640x480_clut224;
+extern const struct linux_logo logo_fluke_800x480_clut224;
 
 /* logo's are marked __initdata. Use __init_refok to tell
  * modpost that it is intended that this function uses data
@@ -113,9 +113,9 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
 		/* M32R Linux logo */
 		logo = &logo_m32r_clut224;
 #endif
-#ifdef CONFIG_LOGO_FLUKE_640X480_CLUT224
+#ifdef CONFIG_LOGO_FLUKE_800X480_CLUT224
 		/* Fluke Custom logo */
-		logo = &logo_fluke_640x480_clut224;
+		logo = &logo_fluke_800x480_clut224;
 #endif
 	}
 	return logo;
