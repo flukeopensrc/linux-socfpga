@@ -33,7 +33,7 @@
                 interrupt-parent = < &intc >;
                 interrupts = < 0 45 4 >;
                 clocks = < &Nighthawk_FPGA_IO_HPS_CLK >;
-                clock-frequency = < 60000000 >;	/* embeddedsw.dts.params.clock-frequency type NUMBER */
+                clock-frequency = < 110592000 >;	/* embeddedsw.dts.params.clock-frequency type NUMBER */
                 fifo-size = < 128 >;	/* embeddedsw.dts.params.fifo-size type NUMBER */
                 reg-io-width = < 4 >;	/* embeddedsw.dts.params.reg-io-width type NUMBER */
                 reg-shift = < 2 >;	/* embeddedsw.dts.params.reg-shift type NUMBER */
