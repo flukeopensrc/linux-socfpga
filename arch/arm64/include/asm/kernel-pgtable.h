@@ -97,7 +97,7 @@
 			+ EARLY_PGDS((vstart), (vend)) 	/* each PGDIR needs a next level page table */	\
 			+ EARLY_PUDS((vstart), (vend))	/* each PUD needs a next level page table */	\
 			+ EARLY_PMDS((vstart), (vend)))	/* each PMD needs a next level page table */
-#define SWAPPER_DIR_SIZE (PAGE_SIZE * EARLY_PAGES(KIMAGE_VADDR + TEXT_OFFSET, _end))
+#define INIT_DIR_SIZE (PAGE_SIZE * EARLY_PAGES(KIMAGE_VADDR + TEXT_OFFSET, _end))
 #define IDMAP_DIR_SIZE		(IDMAP_PGTABLE_LEVELS * PAGE_SIZE)
 
 #ifdef CONFIG_ARM64_SW_TTBR0_PAN
@@ -123,16 +123,8 @@
 /*
  * Initial memory map attributes.
  */
-#define _SWAPPER_PTE_FLAGS	(PTE_TYPE_PAGE | PTE_AF | PTE_SHARED)
-#define _SWAPPER_PMD_FLAGS	(PMD_TYPE_SECT | PMD_SECT_AF | PMD_SECT_S)
-
-#ifdef CONFIG_UNMAP_KERNEL_AT_EL0
-#define SWAPPER_PTE_FLAGS	(_SWAPPER_PTE_FLAGS | PTE_NG)
-#define SWAPPER_PMD_FLAGS	(_SWAPPER_PMD_FLAGS | PMD_SECT_NG)
-#else
-#define SWAPPER_PTE_FLAGS	_SWAPPER_PTE_FLAGS
-#define SWAPPER_PMD_FLAGS	_SWAPPER_PMD_FLAGS
-#endif
+#define SWAPPER_PTE_FLAGS	(PTE_TYPE_PAGE | PTE_AF | PTE_SHARED)
+#define SWAPPER_PMD_FLAGS	(PMD_TYPE_SECT | PMD_SECT_AF | PMD_SECT_S)
 
 #if ARM64_SWAPPER_USES_SECTION_MAPS
 #define SWAPPER_MM_MMUFLAGS	(PMD_ATTRINDX(MT_NORMAL) | SWAPPER_PMD_FLAGS)

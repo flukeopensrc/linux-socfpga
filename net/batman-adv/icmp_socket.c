@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
-/* Copyright (C) 2007-2017  B.A.T.M.A.N. contributors:
+/* Copyright (C) 2007-2018  B.A.T.M.A.N. contributors:
  *
  * Marek Lindner
  *
@@ -24,6 +24,7 @@
 #include <linux/debugfs.h>
 #include <linux/errno.h>
 #include <linux/etherdevice.h>
+#include <linux/eventpoll.h>
 #include <linux/export.h>
 #include <linux/fcntl.h>
 #include <linux/fs.h>
@@ -46,6 +47,7 @@
 #include <linux/wait.h>
 #include <uapi/linux/batadv_packet.h>
 
+#include "debugfs.h"
 #include "hard-interface.h"
 #include "log.h"
 #include "originator.h"
@@ -72,6 +74,8 @@ static int batadv_socket_open(struct inode *inode, struct file *file)
 
 	if (!try_module_get(THIS_MODULE))
 		return -EBUSY;
+
+	batadv_debugfs_deprecated(file, "");
 
 	nonseekable_open(inode, file);
 
@@ -304,7 +308,7 @@ static __poll_t batadv_socket_poll(struct file *file, poll_table *wait)
 	poll_wait(file, &socket_client->queue_wait, wait);
 
 	if (socket_client->queue_len > 0)
-		return POLLIN | POLLRDNORM;
+		return EPOLLIN | EPOLLRDNORM;
 
 	return 0;
 }

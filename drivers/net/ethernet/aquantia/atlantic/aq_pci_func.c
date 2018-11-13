@@ -84,7 +84,7 @@ static int aq_pci_probe_get_hw_by_id(struct pci_dev *pdev,
 				     const struct aq_hw_ops **ops,
 				     const struct aq_hw_caps_s **caps)
 {
-	int i = 0;
+	int i;
 
 	if (pdev->vendor != PCI_VENDOR_ID_AQUANTIA)
 		return -EINVAL;
@@ -107,7 +107,7 @@ static int aq_pci_probe_get_hw_by_id(struct pci_dev *pdev,
 
 int aq_pci_func_init(struct pci_dev *pdev)
 {
-	int err = 0;
+	int err;
 
 	err = pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
 	if (!err) {
@@ -141,7 +141,7 @@ int aq_pci_func_alloc_irq(struct aq_nic_s *self, unsigned int i,
 			  char *name, void *aq_vec, cpumask_t *affinity_mask)
 {
 	struct pci_dev *pdev = self->pdev;
-	int err = 0;
+	int err;
 
 	if (pdev->msix_enabled || pdev->msi_enabled)
 		err = request_irq(pci_irq_vector(pdev, i), aq_vec_isr, 0,
@@ -164,7 +164,7 @@ int aq_pci_func_alloc_irq(struct aq_nic_s *self, unsigned int i,
 void aq_pci_func_free_irqs(struct aq_nic_s *self)
 {
 	struct pci_dev *pdev = self->pdev;
-	unsigned int i = 0U;
+	unsigned int i;
 
 	for (i = 32U; i--;) {
 		if (!((1U << i) & self->msix_entry_mask))
@@ -194,8 +194,8 @@ static void aq_pci_free_irq_vectors(struct aq_nic_s *self)
 static int aq_pci_probe(struct pci_dev *pdev,
 			const struct pci_device_id *pci_id)
 {
-	struct aq_nic_s *self = NULL;
-	int err = 0;
+	struct aq_nic_s *self;
+	int err;
 	struct net_device *ndev;
 	resource_size_t mmio_pa;
 	u32 bar;
@@ -226,6 +226,10 @@ static int aq_pci_probe(struct pci_dev *pdev,
 		goto err_ioremap;
 
 	self->aq_hw = kzalloc(sizeof(*self->aq_hw), GFP_KERNEL);
+	if (!self->aq_hw) {
+		err = -ENOMEM;
+		goto err_ioremap;
+	}
 	self->aq_hw->aq_nic_cfg = aq_nic_get_cfg(self);
 
 	for (bar = 0; bar < 4; ++bar) {
@@ -235,19 +239,19 @@ static int aq_pci_probe(struct pci_dev *pdev,
 			mmio_pa = pci_resource_start(pdev, bar);
 			if (mmio_pa == 0U) {
 				err = -EIO;
-				goto err_ioremap;
+				goto err_free_aq_hw;
 			}
 
 			reg_sz = pci_resource_len(pdev, bar);
 			if ((reg_sz <= 24 /*ATL_REGS_SIZE*/)) {
 				err = -EIO;
-				goto err_ioremap;
+				goto err_free_aq_hw;
 			}
 
 			self->aq_hw->mmio = ioremap_nocache(mmio_pa, reg_sz);
 			if (!self->aq_hw->mmio) {
 				err = -EIO;
-				goto err_ioremap;
+				goto err_free_aq_hw;
 			}
 			break;
 		}
@@ -255,7 +259,7 @@ static int aq_pci_probe(struct pci_dev *pdev,
 
 	if (bar == 4) {
 		err = -EIO;
-		goto err_ioremap;
+		goto err_free_aq_hw;
 	}
 
 	numvecs = min((u8)AQ_CFG_VECS_DEF,
@@ -263,16 +267,15 @@ static int aq_pci_probe(struct pci_dev *pdev,
 	numvecs = min(numvecs, num_online_cpus());
 	/*enable interrupts */
 #if !AQ_CFG_FORCE_LEGACY_INT
-	err = pci_alloc_irq_vectors(self->pdev, numvecs, numvecs,
-				    PCI_IRQ_MSIX);
+	err = pci_alloc_irq_vectors(self->pdev, 1, numvecs,
+				    PCI_IRQ_MSIX | PCI_IRQ_MSI |
+				    PCI_IRQ_LEGACY);
 
-	if (err < 0) {
-		err = pci_alloc_irq_vectors(self->pdev, 1, 1,
-					    PCI_IRQ_MSI | PCI_IRQ_LEGACY);
-		if (err < 0)
-			goto err_hwinit;
-	}
+	if (err < 0)
+		goto err_hwinit;
+	numvecs = err;
 #endif
+	self->irqvecs = numvecs;
 
 	/* net device init */
 	aq_nic_cfg_start(self);
@@ -290,11 +293,13 @@ err_register:
 	aq_pci_free_irq_vectors(self);
 err_hwinit:
 	iounmap(self->aq_hw->mmio);
+err_free_aq_hw:
+	kfree(self->aq_hw);
 err_ioremap:
 	free_netdev(ndev);
-err_pci_func:
-	pci_release_regions(pdev);
 err_ndev:
+	pci_release_regions(pdev);
+err_pci_func:
 	pci_disable_device(pdev);
 	return err;
 }
@@ -315,6 +320,20 @@ static void aq_pci_remove(struct pci_dev *pdev)
 	}
 
 	pci_disable_device(pdev);
+}
+
+static void aq_pci_shutdown(struct pci_dev *pdev)
+{
+	struct aq_nic_s *self = pci_get_drvdata(pdev);
+
+	aq_nic_shutdown(self);
+
+	pci_disable_device(pdev);
+
+	if (system_state == SYSTEM_POWER_OFF) {
+		pci_wake_from_d3(pdev, false);
+		pci_set_power_state(pdev, PCI_D3hot);
+	}
 }
 
 static int aq_pci_suspend(struct pci_dev *pdev, pm_message_t pm_msg)
@@ -339,6 +358,7 @@ static struct pci_driver aq_pci_ops = {
 	.remove = aq_pci_remove,
 	.suspend = aq_pci_suspend,
 	.resume = aq_pci_resume,
+	.shutdown = aq_pci_shutdown,
 };
 
 module_pci_driver(aq_pci_ops);

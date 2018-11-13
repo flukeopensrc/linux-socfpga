@@ -162,7 +162,7 @@ static int tbf_segment(struct sk_buff *skb, struct Qdisc *sch,
 	nb = 0;
 	while (segs) {
 		nskb = segs->next;
-		segs->next = NULL;
+		skb_mark_not_on_list(segs);
 		qdisc_skb_cb(segs)->pkt_len = segs->len;
 		len += segs->len;
 		ret = qdisc_enqueue(segs, q->qdisc, to_free);
@@ -188,7 +188,8 @@ static int tbf_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 	int ret;
 
 	if (qdisc_pkt_len(skb) > q->max_size) {
-		if (skb_is_gso(skb) && skb_gso_mac_seglen(skb) <= q->max_size)
+		if (skb_is_gso(skb) &&
+		    skb_gso_validate_mac_len(skb, q->max_size))
 			return tbf_segment(skb, sch, to_free);
 		return qdisc_drop(skb, sch, to_free);
 	}
@@ -382,16 +383,17 @@ static int tbf_change(struct Qdisc *sch, struct nlattr *opt,
 			err = PTR_ERR(child);
 			goto done;
 		}
+
+		/* child is fifo, no need to check for noop_qdisc */
+		qdisc_hash_add(child, true);
 	}
 
 	sch_tree_lock(sch);
 	if (child) {
 		qdisc_tree_reduce_backlog(q->qdisc, q->qdisc->q.qlen,
 					  q->qdisc->qstats.backlog);
-		qdisc_destroy(q->qdisc);
+		qdisc_put(q->qdisc);
 		q->qdisc = child;
-		if (child != &noop_qdisc)
-			qdisc_hash_add(child, true);
 	}
 	q->limit = qopt->limit;
 	if (tb[TCA_TBF_PBURST])
@@ -436,7 +438,7 @@ static void tbf_destroy(struct Qdisc *sch)
 	struct tbf_sched_data *q = qdisc_priv(sch);
 
 	qdisc_watchdog_cancel(&q->watchdog);
-	qdisc_destroy(q->qdisc);
+	qdisc_put(q->qdisc);
 }
 
 static int tbf_dump(struct Qdisc *sch, struct sk_buff *skb)

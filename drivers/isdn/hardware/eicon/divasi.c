@@ -101,23 +101,10 @@ static int um_idi_proc_show(struct seq_file *m, void *v)
 	return 0;
 }
 
-static int um_idi_proc_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, um_idi_proc_show, NULL);
-}
-
-static const struct file_operations um_idi_proc_fops = {
-	.owner		= THIS_MODULE,
-	.open		= um_idi_proc_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= single_release,
-};
-
 static int __init create_um_idi_proc(void)
 {
-	um_idi_proc_entry = proc_create(DRIVERLNAME, S_IRUGO, proc_net_eicon,
-					&um_idi_proc_fops);
+	um_idi_proc_entry = proc_create_single(DRIVERLNAME, S_IRUGO,
+			proc_net_eicon, um_idi_proc_show);
 	if (!um_idi_proc_entry)
 		return (0);
 	return (1);
@@ -370,31 +357,31 @@ static __poll_t um_idi_poll(struct file *file, poll_table *wait)
 	diva_um_idi_os_context_t *p_os;
 
 	if (!file->private_data) {
-		return (POLLERR);
+		return (EPOLLERR);
 	}
 
 	if ((!(p_os =
 	       (diva_um_idi_os_context_t *)
 	       diva_um_id_get_os_context(file->private_data)))
 	    || p_os->aborted) {
-		return (POLLERR);
+		return (EPOLLERR);
 	}
 
 	poll_wait(file, &p_os->read_wait, wait);
 
 	if (p_os->aborted) {
-		return (POLLERR);
+		return (EPOLLERR);
 	}
 
 	switch (diva_user_mode_idi_ind_ready(file->private_data, file)) {
 	case (-1):
-		return (POLLERR);
+		return (EPOLLERR);
 
 	case 0:
 		return (0);
 	}
 
-	return (POLLIN | POLLRDNORM);
+	return (EPOLLIN | EPOLLRDNORM);
 }
 
 static int um_idi_open(struct inode *inode, struct file *file)

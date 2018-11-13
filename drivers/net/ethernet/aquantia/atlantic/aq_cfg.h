@@ -36,6 +36,8 @@
 #define AQ_CFG_TX_FRAME_MAX  (16U * 1024U)
 #define AQ_CFG_RX_FRAME_MAX  (4U * 1024U)
 
+#define AQ_CFG_TX_CLEAN_BUDGET 256U
+
 /* LRO */
 #define AQ_CFG_IS_LRO_DEF           1U
 
@@ -60,8 +62,6 @@
 #define AQ_CFG_RESTART_DESC_THRES   (AQ_CFG_SKB_FRAGS_MAX * 2)
 
 #define AQ_CFG_NAPI_WEIGHT     64U
-
-#define AQ_CFG_MULTICAST_ADDRESS_MAX     32U
 
 /*#define AQ_CFG_MAC_ADDR_PERMANENT {0x30, 0x0E, 0xE3, 0x12, 0x34, 0x56}*/
 

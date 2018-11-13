@@ -2514,8 +2514,8 @@ mptctl_hp_hostinfo(unsigned long arg, unsigned int data_size)
 				if (mpt_config(ioc, &cfg) == 0) {
 					ManufacturingPage0_t *pdata = (ManufacturingPage0_t *) pbuf;
 					if (strlen(pdata->BoardTracerNumber) > 1) {
-						strncpy(karg.serial_number, 									    pdata->BoardTracerNumber, 24);
-						karg.serial_number[24-1]='\0';
+						strlcpy(karg.serial_number,
+							pdata->BoardTracerNumber, 24);
 					}
 				}
 				pci_free_consistent(ioc->pcidev, hdr.PageLength * 4, pbuf, buf_dma);
@@ -2687,6 +2687,8 @@ mptctl_hp_targetinfo(unsigned long arg)
 				__FILE__, __LINE__, iocnum);
 		return -ENODEV;
 	}
+	if (karg.hdr.id >= MPT_MAX_FC_DEVICES)
+		return -EINVAL;
 	dctlprintk(ioc, printk(MYIOC_s_DEBUG_FMT "mptctl_hp_targetinfo called.\n",
 	    ioc->name));
 

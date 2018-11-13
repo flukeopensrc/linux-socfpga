@@ -1258,20 +1258,6 @@ static struct ab8500_prcmu_ranges ab8540_debug_ranges[AB8500_NUM_BANKS] = {
 	},
 };
 
-#define DEFINE_SHOW_ATTRIBUTE(__name)					      \
-static int __name ## _open(struct inode *inode, struct file *file)	      \
-{									      \
-	return single_open(file, __name ## _show, inode->i_private);	      \
-}									      \
-									      \
-static const struct file_operations __name ## _fops = {			      \
-	.owner		= THIS_MODULE,					      \
-	.open		= __name ## _open,				      \
-	.read		= seq_read,					      \
-	.llseek		= seq_lseek,					      \
-	.release	= single_release,				      \
-}									      \
-
 static irqreturn_t ab8500_debug_handler(int irq, void *data)
 {
 	char buf[16];
@@ -1281,7 +1267,7 @@ static irqreturn_t ab8500_debug_handler(int irq, void *data)
 	if (irq_abb < num_irqs)
 		irq_count[irq_abb]++;
 	/*
-	 * This makes it possible to use poll for events (POLLPRI | POLLERR)
+	 * This makes it possible to use poll for events (EPOLLPRI | EPOLLERR)
 	 * from userspace on sysfs file named <irq-nr>
 	 */
 	sprintf(buf, "%d", irq);
@@ -2533,11 +2519,10 @@ static ssize_t ab8500_subscribe_write(struct file *file,
 	if (!dev_attr[irq_index])
 		return -ENOMEM;
 
-	event_name[irq_index] = kmalloc(count, GFP_KERNEL);
+	event_name[irq_index] = kasprintf(GFP_KERNEL, "%lu", user_val);
 	if (!event_name[irq_index])
 		return -ENOMEM;
 
-	sprintf(event_name[irq_index], "%lu", user_val);
 	dev_attr[irq_index]->show = show_irq;
 	dev_attr[irq_index]->store = NULL;
 	dev_attr[irq_index]->attr.name = event_name[irq_index];
@@ -2674,18 +2659,18 @@ static int ab8500_debug_probe(struct platform_device *plf)
 	ab8500 = dev_get_drvdata(plf->dev.parent);
 	num_irqs = ab8500->mask_size;
 
-	irq_count = devm_kzalloc(&plf->dev,
-				 sizeof(*irq_count)*num_irqs, GFP_KERNEL);
+	irq_count = devm_kcalloc(&plf->dev,
+				 num_irqs, sizeof(*irq_count), GFP_KERNEL);
 	if (!irq_count)
 		return -ENOMEM;
 
-	dev_attr = devm_kzalloc(&plf->dev,
-				sizeof(*dev_attr)*num_irqs, GFP_KERNEL);
+	dev_attr = devm_kcalloc(&plf->dev,
+				num_irqs, sizeof(*dev_attr), GFP_KERNEL);
 	if (!dev_attr)
 		return -ENOMEM;
 
-	event_name = devm_kzalloc(&plf->dev,
-				  sizeof(*event_name)*num_irqs, GFP_KERNEL);
+	event_name = devm_kcalloc(&plf->dev,
+				  num_irqs, sizeof(*event_name), GFP_KERNEL);
 	if (!event_name)
 		return -ENOMEM;
 

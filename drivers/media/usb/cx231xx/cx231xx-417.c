@@ -29,6 +29,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/firmware.h>
+#include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <media/v4l2-common.h>
 #include <media/v4l2-ioctl.h>
@@ -1582,7 +1583,7 @@ static int vidioc_enum_fmt_vid_cap(struct file *file, void  *priv,
 	if (f->index != 0)
 		return -EINVAL;
 
-	strlcpy(f->description, "MPEG", sizeof(f->description));
+	strscpy(f->description, "MPEG", sizeof(f->description));
 	f->pixelformat = V4L2_PIX_FMT_MPEG;
 
 	return 0;
@@ -1821,11 +1822,11 @@ static __poll_t mpeg_poll(struct file *file,
 	__poll_t res = 0;
 
 	if (v4l2_event_pending(&fh->fh))
-		res |= POLLPRI;
+		res |= EPOLLPRI;
 	else
 		poll_wait(file, &fh->fh.wait, wait);
 
-	if (!(req_events & (POLLIN | POLLRDNORM)))
+	if (!(req_events & (EPOLLIN | EPOLLRDNORM)))
 		return res;
 
 	mutex_lock(&dev->lock);
@@ -1991,7 +1992,7 @@ int cx231xx_417_register(struct cx231xx *dev)
 	dev->mpeg_ctrl_handler.ops = &cx231xx_ops;
 	if (dev->sd_cx25840)
 		v4l2_ctrl_add_handler(&dev->mpeg_ctrl_handler.hdl,
-				dev->sd_cx25840->ctrl_handler, NULL);
+				dev->sd_cx25840->ctrl_handler, NULL, false);
 	if (dev->mpeg_ctrl_handler.hdl.error) {
 		err = dev->mpeg_ctrl_handler.hdl.error;
 		dprintk(3, "%s: can't add cx25840 controls\n", dev->name);

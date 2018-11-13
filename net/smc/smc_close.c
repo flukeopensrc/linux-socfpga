@@ -30,27 +30,6 @@ static void smc_close_cleanup_listen(struct sock *parent)
 		smc_close_non_accepted(sk);
 }
 
-static void smc_close_wait_listen_clcsock(struct smc_sock *smc)
-{
-	DEFINE_WAIT_FUNC(wait, woken_wake_function);
-	struct sock *sk = &smc->sk;
-	signed long timeout;
-
-	timeout = SMC_CLOSE_WAIT_LISTEN_CLCSOCK_TIME;
-	add_wait_queue(sk_sleep(sk), &wait);
-	do {
-		release_sock(sk);
-		if (smc->clcsock)
-			timeout = wait_woken(&wait, TASK_UNINTERRUPTIBLE,
-					     timeout);
-		sched_annotate_sleep();
-		lock_sock(sk);
-		if (!smc->clcsock)
-			break;
-	} while (timeout);
-	remove_wait_queue(sk_sleep(sk), &wait);
-}
-
 /* wait for sndbuf data being transmitted */
 static void smc_close_stream_wait(struct smc_sock *smc, long timeout)
 {
@@ -121,13 +100,14 @@ static void smc_close_active_abort(struct smc_sock *smc)
 	struct smc_cdc_conn_state_flags *txflags =
 		&smc->conn.local_tx_ctrl.conn_state_flags;
 
-	sk->sk_err = ECONNABORTED;
-	if (smc->clcsock && smc->clcsock->sk) {
-		smc->clcsock->sk->sk_err = ECONNABORTED;
-		smc->clcsock->sk->sk_state_change(smc->clcsock->sk);
+	if (sk->sk_state != SMC_INIT && smc->clcsock && smc->clcsock->sk) {
+		sk->sk_err = ECONNABORTED;
+		if (smc->clcsock && smc->clcsock->sk) {
+			smc->clcsock->sk->sk_err = ECONNABORTED;
+			smc->clcsock->sk->sk_state_change(smc->clcsock->sk);
+		}
 	}
 	switch (sk->sk_state) {
-	case SMC_INIT:
 	case SMC_ACTIVE:
 		sk->sk_state = SMC_PEERABORTWAIT;
 		release_sock(sk);
@@ -162,6 +142,7 @@ static void smc_close_active_abort(struct smc_sock *smc)
 	case SMC_PEERFINCLOSEWAIT:
 		sock_put(sk); /* passive closing */
 		break;
+	case SMC_INIT:
 	case SMC_PEERABORTWAIT:
 	case SMC_CLOSED:
 		break;
@@ -204,9 +185,11 @@ again:
 			rc = kernel_sock_shutdown(smc->clcsock, SHUT_RDWR);
 			/* wake up kernel_accept of smc_tcp_listen_worker */
 			smc->clcsock->sk->sk_data_ready(smc->clcsock->sk);
-			smc_close_wait_listen_clcsock(smc);
 		}
 		smc_close_cleanup_listen(sk);
+		release_sock(sk);
+		flush_work(&smc->tcp_listen_work);
+		lock_sock(sk);
 		break;
 	case SMC_ACTIVE:
 		smc_close_stream_wait(smc, timeout);

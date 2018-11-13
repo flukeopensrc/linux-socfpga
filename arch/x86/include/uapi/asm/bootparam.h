@@ -16,6 +16,9 @@
 #define RAMDISK_PROMPT_FLAG		0x8000
 #define RAMDISK_LOAD_FLAG		0x4000
 
+/* version flags */
+#define VERSION_WRITTEN	0x8000
+
 /* loadflags */
 #define LOADED_HIGH	(1<<0)
 #define KASLR_FLAG	(1<<1)
@@ -86,6 +89,7 @@ struct setup_header {
 	__u64	pref_address;
 	__u32	init_size;
 	__u32	handover_offset;
+	__u64	acpi_rsdp_addr;
 } __attribute__((packed));
 
 struct sys_desc_table {
@@ -137,15 +141,15 @@ struct boot_e820_entry {
  * setup data structure.
  */
 struct jailhouse_setup_data {
-	u16	version;
-	u16	compatible_version;
-	u16	pm_timer_address;
-	u16	num_cpus;
-	u64	pci_mmconfig_base;
-	u32	tsc_khz;
-	u32	apic_khz;
-	u8	standard_ioapic;
-	u8	cpu_ids[255];
+	__u16	version;
+	__u16	compatible_version;
+	__u16	pm_timer_address;
+	__u16	num_cpus;
+	__u64	pci_mmconfig_base;
+	__u32	tsc_khz;
+	__u32	apic_khz;
+	__u8	standard_ioapic;
+	__u8	cpu_ids[255];
 } __attribute__((packed));
 
 /* The so-called "zeropage" */

@@ -45,7 +45,7 @@ struct fwnode_endpoint {
 struct fwnode_reference_args {
 	struct fwnode_handle *fwnode;
 	unsigned int nargs;
-	unsigned int args[NR_FWNODE_REFERENCE_ARGS];
+	u64 args[NR_FWNODE_REFERENCE_ARGS];
 };
 
 /**
@@ -73,8 +73,8 @@ struct fwnode_operations {
 	struct fwnode_handle *(*get)(struct fwnode_handle *fwnode);
 	void (*put)(struct fwnode_handle *fwnode);
 	bool (*device_is_available)(const struct fwnode_handle *fwnode);
-	void *(*device_get_match_data)(const struct fwnode_handle *fwnode,
-				       const struct device *dev);
+	const void *(*device_get_match_data)(const struct fwnode_handle *fwnode,
+					     const struct device *dev);
 	bool (*property_present)(const struct fwnode_handle *fwnode,
 				 const char *propname);
 	int (*property_read_int_array)(const struct fwnode_handle *fwnode,

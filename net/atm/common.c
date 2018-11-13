@@ -630,10 +630,9 @@ int vcc_sendmsg(struct socket *sock, struct msghdr *m, size_t size)
 		goto out;
 	}
 	pr_debug("%d += %d\n", sk_wmem_alloc_get(sk), skb->truesize);
-	refcount_add(skb->truesize, &sk->sk_wmem_alloc);
+	atm_account_tx(vcc, skb);
 
 	skb->dev = NULL; /* for paths shared with net_device interfaces */
-	ATM_SKB(skb)->atm_options = vcc->atm_options;
 	if (!copy_from_iter_full(skb_put(skb, size), size, &m->msg_iter)) {
 		kfree_skb(skb);
 		error = -EFAULT;
@@ -654,22 +653,22 @@ __poll_t vcc_poll(struct file *file, struct socket *sock, poll_table *wait)
 	struct atm_vcc *vcc;
 	__poll_t mask;
 
-	sock_poll_wait(file, sk_sleep(sk), wait);
+	sock_poll_wait(file, sock, wait);
 	mask = 0;
 
 	vcc = ATM_SD(sock);
 
 	/* exceptional events */
 	if (sk->sk_err)
-		mask = POLLERR;
+		mask = EPOLLERR;
 
 	if (test_bit(ATM_VF_RELEASED, &vcc->flags) ||
 	    test_bit(ATM_VF_CLOSE, &vcc->flags))
-		mask |= POLLHUP;
+		mask |= EPOLLHUP;
 
 	/* readable? */
 	if (!skb_queue_empty(&sk->sk_receive_queue))
-		mask |= POLLIN | POLLRDNORM;
+		mask |= EPOLLIN | EPOLLRDNORM;
 
 	/* writable? */
 	if (sock->state == SS_CONNECTING &&
@@ -678,7 +677,7 @@ __poll_t vcc_poll(struct file *file, struct socket *sock, poll_table *wait)
 
 	if (vcc->qos.txtp.traffic_class != ATM_NONE &&
 	    vcc_writable(sk))
-		mask |= POLLOUT | POLLWRNORM | POLLWRBAND;
+		mask |= EPOLLOUT | EPOLLWRNORM | EPOLLWRBAND;
 
 	return mask;
 }

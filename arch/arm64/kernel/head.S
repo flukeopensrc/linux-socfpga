@@ -148,26 +148,6 @@ preserve_boot_args:
 ENDPROC(preserve_boot_args)
 
 /*
- * Macro to arrange a physical address in a page table entry, taking care of
- * 52-bit addresses.
- *
- * Preserves:	phys
- * Returns:	pte
- */
-	.macro	phys_to_pte, phys, pte
-#ifdef CONFIG_ARM64_PA_BITS_52
-	/*
-	 * We assume \phys is 64K aligned and this is guaranteed by only
-	 * supporting this configuration with 64K pages.
-	 */
-	orr	\pte, \phys, \phys, lsr #36
-	and	\pte, \pte, #PTE_ADDR_MASK
-#else
-	mov	\pte, \phys
-#endif
-	.endm
-
-/*
  * Macro to create a table entry to the next page.
  *
  *	tbl:	page table address
@@ -181,7 +161,7 @@ ENDPROC(preserve_boot_args)
  */
 	.macro	create_table_entry, tbl, virt, shift, ptrs, tmp1, tmp2
 	add	\tmp1, \tbl, #PAGE_SIZE
-	phys_to_pte \tmp1, \tmp2
+	phys_to_pte \tmp2, \tmp1
 	orr	\tmp2, \tmp2, #PMD_TYPE_TABLE	// address of next table and entry type
 	lsr	\tmp1, \virt, #\shift
 	sub	\ptrs, \ptrs, #1
@@ -207,7 +187,7 @@ ENDPROC(preserve_boot_args)
  * Returns:	rtbl
  */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
-.Lpe\@:	phys_to_pte \rtbl, \tmp1
+.Lpe\@:	phys_to_pte \tmp1, \rtbl
 	orr	\tmp1, \tmp1, \flags	// tmp1 = table entry
 	str	\tmp1, [\tbl, \index, lsl #3]
 	add	\rtbl, \rtbl, \inc	// rtbl = pa next level
@@ -307,19 +287,21 @@ __create_page_tables:
 	mov	x28, lr
 
 	/*
-	 * Invalidate the idmap and swapper page tables to avoid potential
-	 * dirty cache lines being evicted.
+	 * Invalidate the init page tables to avoid potential dirty cache lines
+	 * being evicted. Other page tables are allocated in rodata as part of
+	 * the kernel image, and thus are clean to the PoC per the boot
+	 * protocol.
 	 */
-	adrp	x0, idmap_pg_dir
-	adrp	x1, swapper_pg_end
+	adrp	x0, init_pg_dir
+	adrp	x1, init_pg_end
 	sub	x1, x1, x0
 	bl	__inval_dcache_area
 
 	/*
-	 * Clear the idmap and swapper page tables.
+	 * Clear the init page tables.
 	 */
-	adrp	x0, idmap_pg_dir
-	adrp	x1, swapper_pg_end
+	adrp	x0, init_pg_dir
+	adrp	x1, init_pg_end
 	sub	x1, x1, x0
 1:	stp	xzr, xzr, [x0], #16
 	stp	xzr, xzr, [x0], #16
@@ -393,7 +375,7 @@ __create_page_tables:
 	/*
 	 * Map the kernel image (starting with PHYS_OFFSET).
 	 */
-	adrp	x0, swapper_pg_dir
+	adrp	x0, init_pg_dir
 	mov_q	x5, KIMAGE_VADDR + TEXT_OFFSET	// compile time __va(_text)
 	add	x5, x5, x23			// add KASLR displacement
 	mov	x4, PTRS_PER_PGD
@@ -410,7 +392,7 @@ __create_page_tables:
 	 * tables again to remove any speculatively loaded cache lines.
 	 */
 	adrp	x0, idmap_pg_dir
-	adrp	x1, swapper_pg_end
+	adrp	x1, init_pg_end
 	sub	x1, x1, x0
 	dmb	sy
 	bl	__inval_dcache_area
@@ -475,7 +457,7 @@ ENDPROC(__primary_switched)
  * end early head section, begin head code that is also used for
  * hotplug and needs to have the same protections as the text region
  */
-	.section ".idmap.text","ax"
+	.section ".idmap.text","awx"
 
 ENTRY(kimage_vaddr)
 	.quad		_text - TEXT_OFFSET
@@ -596,6 +578,13 @@ set_hcr:
 	orr	x3, x3, #MDCR_EL2_TPMS		// and disable access from EL1
 7:
 	msr	mdcr_el2, x3			// Configure debug traps
+
+	/* LORegions */
+	mrs	x1, id_aa64mmfr1_el1
+	ubfx	x0, x1, #ID_AA64MMFR1_LOR_SHIFT, 4
+	cbz	x0, 1f
+	msr_s	SYS_LORC_EL1, xzr
+1:
 
 	/* Stage-2 translation */
 	msr	vttbr_el2, xzr
@@ -719,6 +708,7 @@ secondary_startup:
 	 * Common entry point for secondary CPUs.
 	 */
 	bl	__cpu_setup			// initialise processor
+	adrp	x1, swapper_pg_dir
 	bl	__enable_mmu
 	ldr	x8, =__secondary_switched
 	br	x8
@@ -761,6 +751,7 @@ ENDPROC(__secondary_switched)
  * Enable the MMU.
  *
  *  x0  = SCTLR_EL1 value for turning on the MMU.
+ *  x1  = TTBR1_EL1 value
  *
  * Returns to the caller via x30/lr. This requires the caller to be covered
  * by the .idmap.text section.
@@ -769,17 +760,16 @@ ENDPROC(__secondary_switched)
  * If it isn't, park the CPU
  */
 ENTRY(__enable_mmu)
-	mrs	x1, ID_AA64MMFR0_EL1
-	ubfx	x2, x1, #ID_AA64MMFR0_TGRAN_SHIFT, 4
+	mrs	x2, ID_AA64MMFR0_EL1
+	ubfx	x2, x2, #ID_AA64MMFR0_TGRAN_SHIFT, 4
 	cmp	x2, #ID_AA64MMFR0_TGRAN_SUPPORTED
 	b.ne	__no_granule_support
-	update_early_cpu_boot_status 0, x1, x2
-	adrp	x1, idmap_pg_dir
-	adrp	x2, swapper_pg_dir
-	phys_to_ttbr x1, x3
-	phys_to_ttbr x2, x4
-	msr	ttbr0_el1, x3			// load TTBR0
-	msr	ttbr1_el1, x4			// load TTBR1
+	update_early_cpu_boot_status 0, x2, x3
+	adrp	x2, idmap_pg_dir
+	phys_to_ttbr x1, x1
+	phys_to_ttbr x2, x2
+	msr	ttbr0_el1, x2			// load TTBR0
+	msr	ttbr1_el1, x1			// load TTBR1
 	isb
 	msr	sctlr_el1, x0
 	isb
@@ -836,6 +826,7 @@ __primary_switch:
 	mrs	x20, sctlr_el1			// preserve old SCTLR_EL1 value
 #endif
 
+	adrp	x1, init_pg_dir
 	bl	__enable_mmu
 #ifdef CONFIG_RELOCATABLE
 	bl	__relocate_kernel

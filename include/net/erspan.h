@@ -159,13 +159,13 @@ static inline void erspan_build_header(struct sk_buff *skb,
 	struct ethhdr *eth = (struct ethhdr *)skb->data;
 	enum erspan_encap_type enc_type;
 	struct erspan_base_hdr *ershdr;
-	struct erspan_metadata *ersmd;
 	struct qtag_prefix {
 		__be16 eth_type;
 		__be16 tci;
 	} *qp;
 	u16 vlan_tci = 0;
 	u8 tos;
+	__be32 *idx;
 
 	tos = is_ipv4 ? ip_hdr(skb)->tos :
 			(ipv6_hdr(skb)->priority << 4) +
@@ -195,8 +195,8 @@ static inline void erspan_build_header(struct sk_buff *skb,
 	set_session_id(ershdr, id);
 
 	/* Build metadata */
-	ersmd = (struct erspan_metadata *)(ershdr + 1);
-	ersmd->u.index = htonl(index & INDEX_MASK);
+	idx = (__be32 *)(ershdr + 1);
+	*idx = htonl(index & INDEX_MASK);
 }
 
 /* ERSPAN GRA: timestamp granularity
@@ -219,13 +219,40 @@ static inline __be32 erspan_get_timestamp(void)
 	return htonl((u32)h_usecs);
 }
 
+/* ERSPAN BSO (Bad/Short/Oversized), see RFC1757
+ *   00b --> Good frame with no error, or unknown integrity
+ *   01b --> Payload is a Short Frame
+ *   10b --> Payload is an Oversized Frame
+ *   11b --> Payload is a Bad Frame with CRC or Alignment Error
+ */
+enum erspan_bso {
+	BSO_NOERROR = 0x0,
+	BSO_SHORT = 0x1,
+	BSO_OVERSIZED = 0x2,
+	BSO_BAD = 0x3,
+};
+
+static inline u8 erspan_detect_bso(struct sk_buff *skb)
+{
+	/* BSO_BAD is not handled because the frame CRC
+	 * or alignment error information is in FCS.
+	 */
+	if (skb->len < ETH_ZLEN)
+		return BSO_SHORT;
+
+	if (skb->len > ETH_FRAME_LEN)
+		return BSO_OVERSIZED;
+
+	return BSO_NOERROR;
+}
+
 static inline void erspan_build_header_v2(struct sk_buff *skb,
 					  u32 id, u8 direction, u16 hwid,
 					  bool truncate, bool is_ipv4)
 {
 	struct ethhdr *eth = (struct ethhdr *)skb->data;
 	struct erspan_base_hdr *ershdr;
-	struct erspan_metadata *md;
+	struct erspan_md2 *md2;
 	struct qtag_prefix {
 		__be16 eth_type;
 		__be16 tci;
@@ -248,6 +275,7 @@ static inline void erspan_build_header_v2(struct sk_buff *skb,
 		vlan_tci = ntohs(qp->tci);
 	}
 
+	bso = erspan_detect_bso(skb);
 	skb_push(skb, sizeof(*ershdr) + ERSPAN_V2_MDSIZE);
 	ershdr = (struct erspan_base_hdr *)skb->data;
 	memset(ershdr, 0, sizeof(*ershdr) + ERSPAN_V2_MDSIZE);
@@ -261,15 +289,15 @@ static inline void erspan_build_header_v2(struct sk_buff *skb,
 	set_session_id(ershdr, id);
 
 	/* Build metadata */
-	md = (struct erspan_metadata *)(ershdr + 1);
-	md->u.md2.timestamp = erspan_get_timestamp();
-	md->u.md2.sgt = htons(sgt);
-	md->u.md2.p = 1;
-	md->u.md2.ft = 0;
-	md->u.md2.dir = direction;
-	md->u.md2.gra = gra;
-	md->u.md2.o = 0;
-	set_hwid(&md->u.md2, hwid);
+	md2 = (struct erspan_md2 *)(ershdr + 1);
+	md2->timestamp = erspan_get_timestamp();
+	md2->sgt = htons(sgt);
+	md2->p = 1;
+	md2->ft = 0;
+	md2->dir = direction;
+	md2->gra = gra;
+	md2->o = 0;
+	set_hwid(md2, hwid);
 }
 
 #endif

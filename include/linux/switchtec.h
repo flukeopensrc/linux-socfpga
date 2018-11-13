@@ -19,10 +19,6 @@
 #include <linux/pci.h>
 #include <linux/cdev.h>
 
-#define MICROSEMI_VENDOR_ID         0x11f8
-#define MICROSEMI_NTB_CLASSCODE     0x068000
-#define MICROSEMI_MGMT_CLASSCODE    0x058000
-
 #define SWITCHTEC_MRPC_PAYLOAD_SIZE 1024
 #define SWITCHTEC_MAX_PFF_CSR 48
 
@@ -100,6 +96,9 @@ struct sw_event_regs {
 	u32 gpio_interrupt_hdr;
 	u32 gpio_interrupt_data;
 	u32 reserved16[4];
+	u32 gfms_event_hdr;
+	u32 gfms_event_data;
+	u32 reserved17[4];
 } __packed;
 
 enum {

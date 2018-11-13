@@ -1098,7 +1098,7 @@ static void cs_hsi_stop(struct cs_hsi_iface *hi)
 	kfree(hi);
 }
 
-static int cs_char_vma_fault(struct vm_fault *vmf)
+static vm_fault_t cs_char_vma_fault(struct vm_fault *vmf)
 {
 	struct cs_char *csdata = vmf->vma->vm_private_data;
 	struct page *page;
@@ -1132,9 +1132,9 @@ static __poll_t cs_char_poll(struct file *file, poll_table *wait)
 	poll_wait(file, &cs_char_data.wait, wait);
 	spin_lock_bh(&csdata->lock);
 	if (!list_empty(&csdata->chardev_queue))
-		ret = POLLIN | POLLRDNORM;
+		ret = EPOLLIN | EPOLLRDNORM;
 	else if (!list_empty(&csdata->dataind_queue))
-		ret = POLLIN | POLLRDNORM;
+		ret = EPOLLIN | EPOLLRDNORM;
 	spin_unlock_bh(&csdata->lock);
 
 	return ret;

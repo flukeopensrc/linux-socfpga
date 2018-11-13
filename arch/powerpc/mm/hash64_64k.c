@@ -86,7 +86,7 @@ int __hash_page_4K(unsigned long ea, unsigned long access, unsigned long vsid,
 
 	subpg_index = (ea & (PAGE_SIZE - 1)) >> shift;
 	vpn  = hpt_vpn(ea, vsid, ssize);
-	rpte = __real_pte(__pte(old_pte), ptep);
+	rpte = __real_pte(__pte(old_pte), ptep, PTRS_PER_PTE);
 	/*
 	 *None of the sub 4k page is hashed
 	 */
@@ -154,7 +154,7 @@ htab_insert_hpte:
 	}
 	hash = hpt_hash(vpn, shift, ssize);
 repeat:
-	hpte_group = ((hash & htab_hash_mask) * HPTES_PER_GROUP) & ~0x7UL;
+	hpte_group = (hash & htab_hash_mask) * HPTES_PER_GROUP;
 
 	/* Insert into the hash table, primary slot */
 	slot = mmu_hash_ops.hpte_insert(hpte_group, vpn, pa, rflags, 0,
@@ -165,7 +165,7 @@ repeat:
 	if (unlikely(slot == -1)) {
 		bool soft_invalid;
 
-		hpte_group = ((~hash & htab_hash_mask) * HPTES_PER_GROUP) & ~0x7UL;
+		hpte_group = (~hash & htab_hash_mask) * HPTES_PER_GROUP;
 		slot = mmu_hash_ops.hpte_insert(hpte_group, vpn, pa,
 						rflags, HPTE_V_SECONDARY,
 						MMU_PAGE_4K, MMU_PAGE_4K,
@@ -193,8 +193,7 @@ repeat:
 			 * that we do not get the same soft-invalid slot.
 			 */
 			if (soft_invalid || (mftb() & 0x1))
-				hpte_group = ((hash & htab_hash_mask) *
-					      HPTES_PER_GROUP) & ~0x7UL;
+				hpte_group = (hash & htab_hash_mask) * HPTES_PER_GROUP;
 
 			mmu_hash_ops.hpte_remove(hpte_group);
 			/*
@@ -214,7 +213,7 @@ repeat:
 		return -1;
 	}
 
-	new_pte |= pte_set_hidx(ptep, rpte, subpg_index, slot);
+	new_pte |= pte_set_hidx(ptep, rpte, subpg_index, slot, PTRS_PER_PTE);
 	new_pte |= H_PAGE_HASHPTE;
 
 	*ptep = __pte(new_pte & ~H_PAGE_BUSY);
@@ -262,7 +261,7 @@ int __hash_page_64K(unsigned long ea, unsigned long access,
 	} while (!pte_xchg(ptep, __pte(old_pte), __pte(new_pte)));
 
 	rflags = htab_convert_pte_flags(new_pte);
-	rpte = __real_pte(__pte(old_pte), ptep);
+	rpte = __real_pte(__pte(old_pte), ptep, PTRS_PER_PTE);
 
 	if (cpu_has_feature(CPU_FTR_NOEXECUTE) &&
 	    !cpu_has_feature(CPU_FTR_COHERENT_ICACHE))
@@ -288,7 +287,7 @@ int __hash_page_64K(unsigned long ea, unsigned long access,
 		hash = hpt_hash(vpn, shift, ssize);
 
 repeat:
-		hpte_group = ((hash & htab_hash_mask) * HPTES_PER_GROUP) & ~0x7UL;
+		hpte_group = (hash & htab_hash_mask) * HPTES_PER_GROUP;
 
 		/* Insert into the hash table, primary slot */
 		slot = mmu_hash_ops.hpte_insert(hpte_group, vpn, pa, rflags, 0,
@@ -298,7 +297,7 @@ repeat:
 		 * Primary is full, try the secondary
 		 */
 		if (unlikely(slot == -1)) {
-			hpte_group = ((~hash & htab_hash_mask) * HPTES_PER_GROUP) & ~0x7UL;
+			hpte_group = (~hash & htab_hash_mask) * HPTES_PER_GROUP;
 			slot = mmu_hash_ops.hpte_insert(hpte_group, vpn, pa,
 							rflags,
 							HPTE_V_SECONDARY,
@@ -306,8 +305,8 @@ repeat:
 							MMU_PAGE_64K, ssize);
 			if (slot == -1) {
 				if (mftb() & 0x1)
-					hpte_group = ((hash & htab_hash_mask) *
-						      HPTES_PER_GROUP) & ~0x7UL;
+					hpte_group = (hash & htab_hash_mask) *
+							HPTES_PER_GROUP;
 				mmu_hash_ops.hpte_remove(hpte_group);
 				/*
 				 * FIXME!! Should be try the group from which we removed ?
@@ -327,7 +326,7 @@ repeat:
 		}
 
 		new_pte = (new_pte & ~_PAGE_HPTEFLAGS) | H_PAGE_HASHPTE;
-		new_pte |= pte_set_hidx(ptep, rpte, 0, slot);
+		new_pte |= pte_set_hidx(ptep, rpte, 0, slot, PTRS_PER_PTE);
 	}
 	*ptep = __pte(new_pte & ~H_PAGE_BUSY);
 	return 0;

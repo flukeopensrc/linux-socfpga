@@ -10,11 +10,13 @@
  */
 
 #include <linux/bpf.h>
+#include <linux/btf.h>
 #include <linux/err.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 #include <net/ipv6.h>
+#include <uapi/linux/btf.h>
 
 /* Intermediate node */
 #define LPM_TREE_NODE_FLAG_IM BIT(0)
@@ -555,7 +557,10 @@ static void trie_free(struct bpf_map *map)
 	struct lpm_trie_node __rcu **slot;
 	struct lpm_trie_node *node;
 
-	raw_spin_lock(&trie->lock);
+	/* Wait for outstanding programs to complete
+	 * update/lookup/delete/get_next_key and free the trie.
+	 */
+	synchronize_rcu();
 
 	/* Always start at the root and walk down to a node that has no
 	 * children. Then free that node, nullify its reference in the parent
@@ -566,10 +571,9 @@ static void trie_free(struct bpf_map *map)
 		slot = &trie->root;
 
 		for (;;) {
-			node = rcu_dereference_protected(*slot,
-					lockdep_is_held(&trie->lock));
+			node = rcu_dereference_protected(*slot, 1);
 			if (!node)
-				goto unlock;
+				goto out;
 
 			if (rcu_access_pointer(node->child[0])) {
 				slot = &node->child[0];
@@ -587,8 +591,8 @@ static void trie_free(struct bpf_map *map)
 		}
 	}
 
-unlock:
-	raw_spin_unlock(&trie->lock);
+out:
+	kfree(trie);
 }
 
 static int trie_get_next_key(struct bpf_map *map, void *_key, void *_next_key)
@@ -621,8 +625,9 @@ static int trie_get_next_key(struct bpf_map *map, void *_key, void *_next_key)
 	if (!key || key->prefixlen > trie->max_prefixlen)
 		goto find_leftmost;
 
-	node_stack = kmalloc(trie->max_prefixlen * sizeof(struct lpm_trie_node *),
-			     GFP_ATOMIC | __GFP_NOWARN);
+	node_stack = kmalloc_array(trie->max_prefixlen,
+				   sizeof(struct lpm_trie_node *),
+				   GFP_ATOMIC | __GFP_NOWARN);
 	if (!node_stack)
 		return -ENOMEM;
 
@@ -683,6 +688,15 @@ free_stack:
 	return err;
 }
 
+static int trie_check_btf(const struct bpf_map *map,
+			  const struct btf_type *key_type,
+			  const struct btf_type *value_type)
+{
+	/* Keys must have struct bpf_lpm_trie_key embedded. */
+	return BTF_INFO_KIND(key_type->info) != BTF_KIND_STRUCT ?
+	       -EINVAL : 0;
+}
+
 const struct bpf_map_ops trie_map_ops = {
 	.map_alloc = trie_alloc,
 	.map_free = trie_free,
@@ -690,4 +704,5 @@ const struct bpf_map_ops trie_map_ops = {
 	.map_lookup_elem = trie_lookup_elem,
 	.map_update_elem = trie_update_elem,
 	.map_delete_elem = trie_delete_elem,
+	.map_check_btf = trie_check_btf,
 };

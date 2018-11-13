@@ -1761,7 +1761,30 @@ struct cmdq_initialize_fw {
 	#define CMDQ_INITIALIZE_FW_TIM_PG_SIZE_PG_2M		   (0x3UL << 4)
 	#define CMDQ_INITIALIZE_FW_TIM_PG_SIZE_PG_8M		   (0x4UL << 4)
 	#define CMDQ_INITIALIZE_FW_TIM_PG_SIZE_PG_1G		   (0x5UL << 4)
-	__le16 reserved16;
+	/* This value is (log-base-2-of-DBR-page-size - 12).
+	 * 0 for 4KB. HW supported values are enumerated below.
+	 */
+	__le16  log2_dbr_pg_size;
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_MASK	0xfUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_SFT		0
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_4K	0x0UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_8K	0x1UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_16K	0x2UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_32K	0x3UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_64K	0x4UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_128K	0x5UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_256K	0x6UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_512K	0x7UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_1M	0x8UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_2M	0x9UL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_4M	0xaUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_8M	0xbUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_16M	0xcUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_32M	0xdUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_64M	0xeUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_128M	0xfUL
+	#define CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_LAST		\
+			CMDQ_INITIALIZE_FW_LOG2_DBR_PG_SIZE_PG_128M
 	__le64 qpc_page_dir;
 	__le64 mrw_page_dir;
 	__le64 srq_page_dir;
@@ -2906,6 +2929,11 @@ struct creq_query_roce_stats_resp_sb {
 	__le64	res_srq_load_err;
 	__le64	res_tx_pci_err;
 	__le64	res_rx_pci_err;
+	__le64  res_oos_drop_count;
+	__le64  active_qp_count_p0;
+	__le64  active_qp_count_p1;
+	__le64  active_qp_count_p2;
+	__le64  active_qp_count_p3;
 };
 
 /* QP error notification event (16 bytes) */

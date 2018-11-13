@@ -517,17 +517,17 @@ static __poll_t tower_poll (struct file *file, poll_table *wait)
 	dev = file->private_data;
 
 	if (!dev->udev)
-		return POLLERR | POLLHUP;
+		return EPOLLERR | EPOLLHUP;
 
 	poll_wait(file, &dev->read_wait, wait);
 	poll_wait(file, &dev->write_wait, wait);
 
 	tower_check_for_read_packet(dev);
 	if (dev->read_packet_length > 0) {
-		mask |= POLLIN | POLLRDNORM;
+		mask |= EPOLLIN | EPOLLRDNORM;
 	}
 	if (!dev->interrupt_out_busy) {
-		mask |= POLLOUT | POLLWRNORM;
+		mask |= EPOLLOUT | EPOLLWRNORM;
 	}
 
 	return mask;
@@ -722,6 +722,7 @@ static void tower_interrupt_in_callback (struct urb *urb)
 	struct lego_usb_tower *dev = urb->context;
 	int status = urb->status;
 	int retval;
+	unsigned long flags;
 
 	lego_usb_tower_debug_data(&dev->udev->dev, __func__,
 				  urb->actual_length, urb->transfer_buffer);
@@ -740,7 +741,7 @@ static void tower_interrupt_in_callback (struct urb *urb)
 	}
 
 	if (urb->actual_length > 0) {
-		spin_lock (&dev->read_buffer_lock);
+		spin_lock_irqsave(&dev->read_buffer_lock, flags);
 		if (dev->read_buffer_length + urb->actual_length < read_buffer_size) {
 			memcpy (dev->read_buffer + dev->read_buffer_length,
 				dev->interrupt_in_buffer,
@@ -753,7 +754,7 @@ static void tower_interrupt_in_callback (struct urb *urb)
 			pr_warn("read_buffer overflow, %d bytes dropped\n",
 				urb->actual_length);
 		}
-		spin_unlock (&dev->read_buffer_lock);
+		spin_unlock_irqrestore(&dev->read_buffer_lock, flags);
 	}
 
 resubmit:

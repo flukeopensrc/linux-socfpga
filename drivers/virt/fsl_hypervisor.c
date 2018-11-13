@@ -223,7 +223,7 @@ static long ioctl_memcpy(struct fsl_hv_ioctl_memcpy __user *p)
 	 * 'pages' is an array of struct page pointers that's initialized by
 	 * get_user_pages().
 	 */
-	pages = kzalloc(num_pages * sizeof(struct page *), GFP_KERNEL);
+	pages = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
 	if (!pages) {
 		pr_debug("fsl-hv: could not allocate page list\n");
 		return -ENOMEM;
@@ -574,7 +574,7 @@ static __poll_t fsl_hv_poll(struct file *filp, struct poll_table_struct *p)
 	spin_lock_irqsave(&dbq->lock, flags);
 
 	poll_wait(filp, &dbq->wait, p);
-	mask = (dbq->head == dbq->tail) ? 0 : (POLLIN | POLLRDNORM);
+	mask = (dbq->head == dbq->tail) ? 0 : (EPOLLIN | EPOLLRDNORM);
 
 	spin_unlock_irqrestore(&dbq->lock, flags);
 

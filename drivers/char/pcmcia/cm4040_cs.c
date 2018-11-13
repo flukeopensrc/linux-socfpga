@@ -423,9 +423,9 @@ static __poll_t cm4040_poll(struct file *filp, poll_table *wait)
 	poll_wait(filp, &dev->poll_wait, wait);
 
 	if (test_and_clear_bit(BS_READABLE, &dev->buffer_status))
-		mask |= POLLIN | POLLRDNORM;
+		mask |= EPOLLIN | EPOLLRDNORM;
 	if (test_and_clear_bit(BS_WRITABLE, &dev->buffer_status))
-		mask |= POLLOUT | POLLWRNORM;
+		mask |= EPOLLOUT | EPOLLWRNORM;
 
 	DEBUGP(2, dev, "<- cm4040_poll(%u)\n", mask);
 
@@ -505,7 +505,7 @@ static void cm4040_reader_release(struct pcmcia_device *link)
 
 	DEBUGP(3, dev, "-> cm4040_reader_release\n");
 	while (link->open) {
-		DEBUGP(3, dev, KERN_INFO MODULE_NAME ": delaying release "
+		DEBUGP(3, dev, MODULE_NAME ": delaying release "
 		       "until process has terminated\n");
  		wait_event(dev->devq, (link->open == 0));
 	}

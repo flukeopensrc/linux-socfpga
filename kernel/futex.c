@@ -65,7 +65,7 @@
 #include <linux/sched/mm.h>
 #include <linux/hugetlb.h>
 #include <linux/freezer.h>
-#include <linux/bootmem.h>
+#include <linux/memblock.h>
 #include <linux/fault-inject.h>
 
 #include <asm/futex.h>
@@ -862,24 +862,6 @@ static void put_pi_state(struct futex_pi_state *pi_state)
 	}
 }
 
-/*
- * Look up the task based on what TID userspace gave us.
- * We dont trust it.
- */
-static struct task_struct *futex_find_get_task(pid_t pid)
-{
-	struct task_struct *p;
-
-	rcu_read_lock();
-	p = find_task_by_vpid(pid);
-	if (p)
-		get_task_struct(p);
-
-	rcu_read_unlock();
-
-	return p;
-}
-
 #ifdef CONFIG_FUTEX_PI
 
 /*
@@ -1183,7 +1165,7 @@ static int attach_to_pi_owner(u32 uval, union futex_key *key,
 	 */
 	if (!pid)
 		return -ESRCH;
-	p = futex_find_get_task(pid);
+	p = find_get_task_by_vpid(pid);
 	if (!p)
 		return -ESRCH;
 
@@ -1383,9 +1365,9 @@ static void __unqueue_futex(struct futex_q *q)
 {
 	struct futex_hash_bucket *hb;
 
-	if (WARN_ON_SMP(!q->lock_ptr || !spin_is_locked(q->lock_ptr))
-	    || WARN_ON(plist_node_empty(&q->list)))
+	if (WARN_ON_SMP(!q->lock_ptr) || WARN_ON(plist_node_empty(&q->list)))
 		return;
+	lockdep_assert_held(q->lock_ptr);
 
 	hb = container_of(q->lock_ptr, struct futex_hash_bucket, lock);
 	plist_del(&q->list, &hb->chain);
@@ -3541,10 +3523,12 @@ long do_futex(u32 __user *uaddr, int op, u32 val, ktime_t *timeout,
 	switch (cmd) {
 	case FUTEX_WAIT:
 		val3 = FUTEX_BITSET_MATCH_ANY;
+		/* fall through */
 	case FUTEX_WAIT_BITSET:
 		return futex_wait(uaddr, flags, val, timeout, val3);
 	case FUTEX_WAKE:
 		val3 = FUTEX_BITSET_MATCH_ANY;
+		/* fall through */
 	case FUTEX_WAKE_BITSET:
 		return futex_wake(uaddr, flags, val, val3);
 	case FUTEX_REQUEUE:

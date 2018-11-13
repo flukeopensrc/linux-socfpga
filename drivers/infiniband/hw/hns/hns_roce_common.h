@@ -43,15 +43,15 @@
 	__raw_writel((__force u32)cpu_to_le32(value), (addr))
 
 #define roce_get_field(origin, mask, shift) \
-	(((origin) & (mask)) >> (shift))
+	(((le32_to_cpu(origin)) & (mask)) >> (shift))
 
 #define roce_get_bit(origin, shift) \
 	roce_get_field((origin), (1ul << (shift)), (shift))
 
 #define roce_set_field(origin, mask, shift, val) \
 	do { \
-		(origin) &= (~(mask)); \
-		(origin) |= (((u32)(val) << (shift)) & (mask)); \
+		(origin) &= ~cpu_to_le32(mask); \
+		(origin) |= cpu_to_le32(((u32)(val) << (shift)) & (mask)); \
 	} while (0)
 
 #define roce_set_bit(origin, shift, val) \
@@ -381,15 +381,6 @@
 
 #define ROCEE_VF_EQ_DB_CFG0_REG			0x238
 #define ROCEE_VF_EQ_DB_CFG1_REG			0x23C
-
-#define ROCEE_VF_SMAC_CFG0_REG			0x12000
-#define ROCEE_VF_SMAC_CFG1_REG			0x12004
-
-#define ROCEE_VF_SGID_CFG0_REG			0x10000
-#define ROCEE_VF_SGID_CFG1_REG			0x10004
-#define ROCEE_VF_SGID_CFG2_REG			0x10008
-#define ROCEE_VF_SGID_CFG3_REG			0x1000c
-#define ROCEE_VF_SGID_CFG4_REG			0x10010
 
 #define ROCEE_VF_ABN_INT_CFG_REG		0x13000
 #define ROCEE_VF_ABN_INT_ST_REG			0x13004

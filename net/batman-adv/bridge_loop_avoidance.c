@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
-/* Copyright (C) 2011-2017  B.A.T.M.A.N. contributors:
+/* Copyright (C) 2011-2018  B.A.T.M.A.N. contributors:
  *
  * Simon Wunderlich
  *
@@ -1449,7 +1449,7 @@ static void batadv_bla_periodic_work(struct work_struct *work)
 		 * detection frames. Set the locally administered bit to avoid
 		 * collisions with users mac addresses.
 		 */
-		random_ether_addr(bat_priv->bla.loopdetect_addr);
+		eth_random_addr(bat_priv->bla.loopdetect_addr);
 		bat_priv->bla.loopdetect_addr[0] = 0xba;
 		bat_priv->bla.loopdetect_addr[1] = 0xbe;
 		bat_priv->bla.loopdetect_lasttime = jiffies;
@@ -1772,6 +1772,7 @@ batadv_bla_loopdetect_check(struct batadv_priv *bat_priv, struct sk_buff *skb,
 {
 	struct batadv_bla_backbone_gw *backbone_gw;
 	struct ethhdr *ethhdr;
+	bool ret;
 
 	ethhdr = eth_hdr(skb);
 
@@ -1795,8 +1796,13 @@ batadv_bla_loopdetect_check(struct batadv_priv *bat_priv, struct sk_buff *skb,
 	if (unlikely(!backbone_gw))
 		return true;
 
-	queue_work(batadv_event_workqueue, &backbone_gw->report_work);
-	/* backbone_gw is unreferenced in the report work function function */
+	ret = queue_work(batadv_event_workqueue, &backbone_gw->report_work);
+
+	/* backbone_gw is unreferenced in the report work function function
+	 * if queue_work() call was successful
+	 */
+	if (!ret)
+		batadv_backbone_gw_put(backbone_gw);
 
 	return true;
 }
@@ -2161,22 +2167,25 @@ batadv_bla_claim_dump_bucket(struct sk_buff *msg, u32 portid, u32 seq,
 {
 	struct batadv_bla_claim *claim;
 	int idx = 0;
+	int ret = 0;
 
 	rcu_read_lock();
 	hlist_for_each_entry_rcu(claim, head, hash_entry) {
 		if (idx++ < *idx_skip)
 			continue;
-		if (batadv_bla_claim_dump_entry(msg, portid, seq,
-						primary_if, claim)) {
+
+		ret = batadv_bla_claim_dump_entry(msg, portid, seq,
+						  primary_if, claim);
+		if (ret) {
 			*idx_skip = idx - 1;
 			goto unlock;
 		}
 	}
 
-	*idx_skip = idx;
+	*idx_skip = 0;
 unlock:
 	rcu_read_unlock();
-	return 0;
+	return ret;
 }
 
 /**
@@ -2391,22 +2400,25 @@ batadv_bla_backbone_dump_bucket(struct sk_buff *msg, u32 portid, u32 seq,
 {
 	struct batadv_bla_backbone_gw *backbone_gw;
 	int idx = 0;
+	int ret = 0;
 
 	rcu_read_lock();
 	hlist_for_each_entry_rcu(backbone_gw, head, hash_entry) {
 		if (idx++ < *idx_skip)
 			continue;
-		if (batadv_bla_backbone_dump_entry(msg, portid, seq,
-						   primary_if, backbone_gw)) {
+
+		ret = batadv_bla_backbone_dump_entry(msg, portid, seq,
+						     primary_if, backbone_gw);
+		if (ret) {
 			*idx_skip = idx - 1;
 			goto unlock;
 		}
 	}
 
-	*idx_skip = idx;
+	*idx_skip = 0;
 unlock:
 	rcu_read_unlock();
-	return 0;
+	return ret;
 }
 
 /**

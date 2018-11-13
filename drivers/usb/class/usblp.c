@@ -292,6 +292,7 @@ static void usblp_bulk_read(struct urb *urb)
 {
 	struct usblp *usblp = urb->context;
 	int status = urb->status;
+	unsigned long flags;
 
 	if (usblp->present && usblp->used) {
 		if (status)
@@ -299,14 +300,14 @@ static void usblp_bulk_read(struct urb *urb)
 			    "nonzero read bulk status received: %d\n",
 			    usblp->minor, status);
 	}
-	spin_lock(&usblp->lock);
+	spin_lock_irqsave(&usblp->lock, flags);
 	if (status < 0)
 		usblp->rstatus = status;
 	else
 		usblp->rstatus = urb->actual_length;
 	usblp->rcomplete = 1;
 	wake_up(&usblp->rwait);
-	spin_unlock(&usblp->lock);
+	spin_unlock_irqrestore(&usblp->lock, flags);
 
 	usb_free_urb(urb);
 }
@@ -315,6 +316,7 @@ static void usblp_bulk_write(struct urb *urb)
 {
 	struct usblp *usblp = urb->context;
 	int status = urb->status;
+	unsigned long flags;
 
 	if (usblp->present && usblp->used) {
 		if (status)
@@ -322,7 +324,7 @@ static void usblp_bulk_write(struct urb *urb)
 			    "nonzero write bulk status received: %d\n",
 			    usblp->minor, status);
 	}
-	spin_lock(&usblp->lock);
+	spin_lock_irqsave(&usblp->lock, flags);
 	if (status < 0)
 		usblp->wstatus = status;
 	else
@@ -330,7 +332,7 @@ static void usblp_bulk_write(struct urb *urb)
 	usblp->no_paper = 0;
 	usblp->wcomplete = 1;
 	wake_up(&usblp->wwait);
-	spin_unlock(&usblp->lock);
+	spin_unlock_irqrestore(&usblp->lock, flags);
 
 	usb_free_urb(urb);
 }
@@ -479,8 +481,8 @@ static __poll_t usblp_poll(struct file *file, struct poll_table_struct *wait)
 	poll_wait(file, &usblp->rwait, wait);
 	poll_wait(file, &usblp->wwait, wait);
 	spin_lock_irqsave(&usblp->lock, flags);
-	ret = ((usblp->bidir && usblp->rcomplete) ? POLLIN  | POLLRDNORM : 0) |
-	   ((usblp->no_paper || usblp->wcomplete) ? POLLOUT | POLLWRNORM : 0);
+	ret = ((usblp->bidir && usblp->rcomplete) ? EPOLLIN  | EPOLLRDNORM : 0) |
+	   ((usblp->no_paper || usblp->wcomplete) ? EPOLLOUT | EPOLLWRNORM : 0);
 	spin_unlock_irqrestore(&usblp->lock, flags);
 	return ret;
 }

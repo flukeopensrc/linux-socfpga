@@ -81,8 +81,18 @@ static long sun4i_dclk_round_rate(struct clk_hw *hw, unsigned long rate,
 	int i;
 
 	for (i = tcon->dclk_min_div; i <= tcon->dclk_max_div; i++) {
-		unsigned long ideal = rate * i;
+		u64 ideal = (u64)rate * i;
 		unsigned long rounded;
+
+		/*
+		 * ideal has overflowed the max value that can be stored in an
+		 * unsigned long, and every clk operation we might do on a
+		 * truncated u64 value will give us incorrect results.
+		 * Let's just stop there since bigger dividers will result in
+		 * the same overflow issue.
+		 */
+		if (ideal > ULONG_MAX)
+			goto out;
 
 		rounded = clk_hw_round_rate(clk_hw_get_parent(hw),
 					    ideal);
@@ -132,10 +142,13 @@ static int sun4i_dclk_get_phase(struct clk_hw *hw)
 static int sun4i_dclk_set_phase(struct clk_hw *hw, int degrees)
 {
 	struct sun4i_dclk *dclk = hw_to_dclk(hw);
+	u32 val = degrees / 120;
+
+	val <<= 28;
 
 	regmap_update_bits(dclk->regmap, SUN4I_TCON0_IO_POL_REG,
 			   GENMASK(29, 28),
-			   degrees / 120);
+			   val);
 
 	return 0;
 }

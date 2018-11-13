@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
-/* Copyright (C) 2010-2017  B.A.T.M.A.N. contributors:
+/* Copyright (C) 2010-2018  B.A.T.M.A.N. contributors:
  *
  * Marek Lindner
  *
@@ -22,6 +22,7 @@
 #include <linux/compiler.h>
 #include <linux/debugfs.h>
 #include <linux/errno.h>
+#include <linux/eventpoll.h>
 #include <linux/export.h>
 #include <linux/fcntl.h>
 #include <linux/fs.h>
@@ -38,6 +39,9 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <stdarg.h>
+
+#include "debugfs.h"
+#include "trace.h"
 
 #define BATADV_LOG_BUFF_MASK (batadv_log_buff_len - 1)
 
@@ -97,13 +101,19 @@ static int batadv_fdebug_log(struct batadv_priv_debug_log *debug_log,
  */
 int batadv_debug_log(struct batadv_priv *bat_priv, const char *fmt, ...)
 {
+	struct va_format vaf;
 	va_list args;
-	char tmp_log_buf[256];
 
 	va_start(args, fmt);
-	vscnprintf(tmp_log_buf, sizeof(tmp_log_buf), fmt, args);
-	batadv_fdebug_log(bat_priv->debug_log, "[%10u] %s",
-			  jiffies_to_msecs(jiffies), tmp_log_buf);
+
+	vaf.fmt = fmt;
+	vaf.va = &args;
+
+	batadv_fdebug_log(bat_priv->debug_log, "[%10u] %pV",
+			  jiffies_to_msecs(jiffies), &vaf);
+
+	trace_batadv_dbg(bat_priv, &vaf);
+
 	va_end(args);
 
 	return 0;
@@ -113,6 +123,9 @@ static int batadv_log_open(struct inode *inode, struct file *file)
 {
 	if (!try_module_get(THIS_MODULE))
 		return -EBUSY;
+
+	batadv_debugfs_deprecated(file,
+				  "Use tracepoint batadv:batadv_dbg instead\n");
 
 	nonseekable_open(inode, file);
 	file->private_data = inode->i_private;
@@ -193,7 +206,7 @@ static __poll_t batadv_log_poll(struct file *file, poll_table *wait)
 	poll_wait(file, &debug_log->queue_wait, wait);
 
 	if (!batadv_log_empty(debug_log))
-		return POLLIN | POLLRDNORM;
+		return EPOLLIN | EPOLLRDNORM;
 
 	return 0;
 }

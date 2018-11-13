@@ -55,7 +55,7 @@ int __hash_page_4K(unsigned long ea, unsigned long access, unsigned long vsid,
 	 * need to add in 0x1 if it's a read-only user page
 	 */
 	rflags = htab_convert_pte_flags(new_pte);
-	rpte = __real_pte(__pte(old_pte), ptep);
+	rpte = __real_pte(__pte(old_pte), ptep, PTRS_PER_PTE);
 
 	if (cpu_has_feature(CPU_FTR_NOEXECUTE) &&
 	    !cpu_has_feature(CPU_FTR_COHERENT_ICACHE))
@@ -80,7 +80,7 @@ int __hash_page_4K(unsigned long ea, unsigned long access, unsigned long vsid,
 		hash = hpt_hash(vpn, shift, ssize);
 
 repeat:
-		hpte_group = ((hash & htab_hash_mask) * HPTES_PER_GROUP) & ~0x7UL;
+		hpte_group = (hash & htab_hash_mask) * HPTES_PER_GROUP;
 
 		/* Insert into the hash table, primary slot */
 		slot = mmu_hash_ops.hpte_insert(hpte_group, vpn, pa, rflags, 0,
@@ -89,7 +89,7 @@ repeat:
 		 * Primary is full, try the secondary
 		 */
 		if (unlikely(slot == -1)) {
-			hpte_group = ((~hash & htab_hash_mask) * HPTES_PER_GROUP) & ~0x7UL;
+			hpte_group = (~hash & htab_hash_mask) * HPTES_PER_GROUP;
 			slot = mmu_hash_ops.hpte_insert(hpte_group, vpn, pa,
 							rflags,
 							HPTE_V_SECONDARY,
@@ -97,8 +97,8 @@ repeat:
 							MMU_PAGE_4K, ssize);
 			if (slot == -1) {
 				if (mftb() & 0x1)
-					hpte_group = ((hash & htab_hash_mask) *
-						      HPTES_PER_GROUP) & ~0x7UL;
+					hpte_group = (hash & htab_hash_mask) *
+							HPTES_PER_GROUP;
 				mmu_hash_ops.hpte_remove(hpte_group);
 				/*
 				 * FIXME!! Should be try the group from which we removed ?
@@ -117,7 +117,7 @@ repeat:
 			return -1;
 		}
 		new_pte = (new_pte & ~_PAGE_HPTEFLAGS) | H_PAGE_HASHPTE;
-		new_pte |= pte_set_hidx(ptep, rpte, 0, slot);
+		new_pte |= pte_set_hidx(ptep, rpte, 0, slot, PTRS_PER_PTE);
 	}
 	*ptep = __pte(new_pte & ~H_PAGE_BUSY);
 	return 0;
