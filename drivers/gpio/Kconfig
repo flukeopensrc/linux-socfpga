@@ -185,6 +185,11 @@ config GPIO_ETRAXFS
 	help
 	  Say yes here to support the GPIO controller on Axis ETRAX FS SoCs.
 
+config GPIO_FLUKE
+	tristate "Fluke Custom GPIO support"
+	help
+	  Say Y or M here to build support for the Fluke Altera PIO device.
+	  
 config GPIO_GE_FPGA
 	bool "GE FPGA based GPIO"
 	depends on GE_FPGA
