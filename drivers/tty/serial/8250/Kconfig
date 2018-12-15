@@ -447,3 +447,11 @@ config SERIAL_OF_PLATFORM
 	  are probed through devicetree, including Open Firmware based
 	  PowerPC systems and embedded systems on architectures using the
 	  flattened device tree format.
+
+config FLUKE_FN_FAST_UART
+	tristate "Support for fast uart designed by Fluke Norwich for use on Vanquish."
+	depends on SERIAL_8250
+	help
+	  Selecting this option will enable support for the fast uart designed
+	  by Fluke Norwich for use on Vanquish.
+         
