@@ -8,7 +8,6 @@ obj-$(CONFIG_USB_CYPRESS_CY7C63)	+= cypress_cy7c63.o
 obj-$(CONFIG_USB_CYTHERM)		+= cytherm.o
 obj-$(CONFIG_USB_EMI26)			+= emi26.o
 obj-$(CONFIG_USB_EMI62)			+= emi62.o
-obj-$(CONFIG_USB_NRP)			+= nrpzmodule.o
 obj-$(CONFIG_USB_EZUSB_FX2)		+= ezusb.o
 obj-$(CONFIG_USB_FTDI_ELAN)		+= ftdi-elan.o
 obj-$(CONFIG_USB_IDMOUSE)		+= idmouse.o

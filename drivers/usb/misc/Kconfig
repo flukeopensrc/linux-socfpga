@@ -227,15 +227,6 @@ config USB_YUREX
 	  To compile this driver as a module, choose M here: the
 	  module will be called yurex.
 
-config USB_NRP
-	tristate "USB Rohde & Schwarz power meter support"
-	help
-	  Say Y here if you want to connect an NRP series power
-	  head to a USB port.  
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called nrpzmodule.
-
 config USB_EZUSB_FX2
 	tristate "Functions for loading firmware on EZUSB chips"
 	help
