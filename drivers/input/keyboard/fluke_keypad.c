@@ -35,7 +35,6 @@
 
 #define FLUKE_5X5_KEYPAD_MAJOR 240
 static int FLUKE_KEYPAD_MAJOR = FLUKE_5X5_KEYPAD_MAJOR;
-static int FLUKE_KEYPAD_MINOR = 0;
 
 #define FLUKE_KEYPAD_BUF_SIZE 128
 
@@ -290,7 +289,7 @@ static int fluke_keypad_probe(struct platform_device *pdev)
 #if !defined(IRQF_DISABLED)
 #define IRQF_DISABLED 0x00
 #endif
-    rc = request_irq(irq, (irq_handler_t)fluke_keypad_handler, IRQF_DISABLED, "fkeypd", fkpd_device);
+    rc = request_irq(irq, (irq_handler_t)fluke_keypad_handler, IRQF_DISABLED, "fkeypd", &pdev->dev);
     // rc = request_irq(irq, (irq_handler_t)fluke_keypad_handler, 0, "fkeypd", NULL);
     if (rc) {
         printk("FLUKE KEYPAD PROBE can't register IRQ\n");
@@ -308,9 +307,9 @@ static int fluke_keypad_probe(struct platform_device *pdev)
 
     result = cdev_add(&kb_data.cdev, devno, 1);
 
-    dev_set_drvdata(fkpd_device, ((void *)&kb_data));
+    dev_set_drvdata(&pdev->dev, ((void *)&kb_data));
 
-	drv_data = dev_get_drvdata(fkpd_device);  //AJD goes away
+	drv_data = dev_get_drvdata(&pdev->dev);  //AJD goes away
 
     // printk("\n\n FLUKE KEYPAD PROBE test = %d\n\n", drv_data->test); 
     
@@ -324,16 +323,16 @@ static int fluke_keypad_probe(struct platform_device *pdev)
     return result;
 }
 
-static int fluke_keypad_remove(struct device *dev)
+static int fluke_keypad_remove(struct platform_device *pdev)
 {
-	struct fluke_keypad_data *drv_data = dev_get_drvdata(dev);
+	struct fluke_keypad_data *drv_data = dev_get_drvdata(&pdev->dev);
 	dev_t dev_num;
 
 	if(drv_data) {
 		cdev_del(&drv_data->cdev);
 		dev_num = MKDEV(FLUKE_KEYPAD_MAJOR, drv_data->minor);
 		unregister_chrdev_region(dev_num, 1);
-		free_irq(drv_data->irq, dev);
+		free_irq(drv_data->irq, &pdev->dev);
 		kfree(drv_data);
 	}
 	
@@ -384,7 +383,7 @@ static int __init fluke_keypad_init (void) {
 static void fluke_keypad_exit(void)
 {
     // release_ports();
-	return driver_unregister(&fkeypd_platform_driver);
+	return platform_driver_unregister(&fkeypd_platform_driver);
 }
 
 module_init(fluke_keypad_init);
