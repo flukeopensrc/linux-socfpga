@@ -328,10 +328,10 @@ static int fluke_gpio_probe(struct platform_device *pdev) {
     int result;
     int devno;
     int rc = 0;
-    unsigned int x;
-    unsigned int configured_bits;
+//    unsigned int x;
+//    unsigned int configured_bits;
     struct resource res;
-    void *ptr_configured_bits;
+//    void *ptr_configured_bits;
 
     devno = MKDEV(FGPIO_MAJOR, i); 
     fgpio_device = device_create(fluke_gpio_class, NULL, devno, NULL, "fgpio%d", i);
