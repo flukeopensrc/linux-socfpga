@@ -40,7 +40,7 @@
 		ethernet0 = &gmac1;
 	};
 
-	/* add some labels for the cpus
+	/* add some labels for the cpus */
 	cpus {
 		cpu0: cpu@0 {
 		};
