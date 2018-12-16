@@ -40,6 +40,14 @@
 		ethernet0 = &gmac1;
 	};
 
+	/* add some labels for the cpus
+	cpus {
+		cpu0: cpu@0 {
+		};
+		cpu1: cpu@1 {
+		};
+	};
+
 	clocks {
 	        #address-cells = < 1 >;
 		#size-cells = < 1 >;
