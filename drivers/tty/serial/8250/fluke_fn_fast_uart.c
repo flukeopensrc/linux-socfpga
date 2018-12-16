@@ -200,7 +200,7 @@ static void fn_fast_uart_dma_rx_complete(void *param)
 }
 
 /*
- * We provide a custom rx_dma function because the pl330 does not support
+ * We provide a custom irq handler and rx_dma function because the pl330 does not support
  * dmaengine_pause() at the hardware level (the pl330.c driver support for pause is
  * broken and can cause corrupt or lost data).  The standard 8250
  * serial8250_rx_dma function requires pauses to work since it will
@@ -209,26 +209,12 @@ static void fn_fast_uart_dma_rx_complete(void *param)
  * currently in the uart's sizeable rx fifo (minus one), and thus
  * will always complete without needing to be paused.
  */
-static int fn_fast_uart_rx_dma(struct uart_8250_port *p, unsigned int iir)
+static int fn_fast_uart_rx_dma(struct uart_8250_port *p)
 {
 	struct uart_8250_dma		*dma = p->dma;
 	struct dma_async_tx_descriptor	*desc;
 	unsigned int fifo_level;
 	
-	switch (iir & 0x3f) {
-	case UART_IIR_RLSI:
-		/* 8250_core handles errors and break interrupts */
-		return -EIO;
-	case UART_IIR_RX_TIMEOUT:
-		if (dma->rx_running == 0)
-		{	
-			/* returning error will cause core to empty fifo with cpu */
-			return -ETIMEDOUT;
-		}
-	default:
-		break;
-	}
-
 	if (dma->rx_running)
 		return 0;
 
@@ -264,18 +250,65 @@ static int fn_fast_uart_rx_dma(struct uart_8250_port *p, unsigned int iir)
 	return 0;
 }
 
-static void fn_fast_uart_setup_port(struct uart_8250_port *up)
+/* slightly tweaked version of handle_rx_dma() from 8250_port.c, to prevent
+ * termination of rx dma on timeout. */
+static bool fn_fast_uart_handle_rx_dma(struct uart_8250_port *up, unsigned int iir)
 {
-	struct uart_port	*p = &up->port;
+	switch (iir & 0x3f) {
+	case UART_IIR_RX_TIMEOUT:
+		return up->dma->rx_running == 0;
+	case UART_IIR_RLSI:
+		return true;
+	}
+	return up->dma->rx_dma(up);
+}
 
-	p->type = PORT_16550A;
-	p->flags |= UPF_FIXED_TYPE | UPF_SKIP_TEST;
-	p->fifosize = FN_FAST_UART_RX_FIFO_SIZE;
-	up->tx_loadsz = FN_FAST_UART_TX_FIFO_SIZE;
-	up->capabilities = UART_CAP_FIFO;
+/*
+ * Slightly tweaked version of serial8250_handle_irq() which uses
+ * fn_fast_uart_handle_rx_dma().
+ */
+int fn_fast_uart_handle_irq(struct uart_port *port, unsigned int iir)
+{
+	unsigned char status;
+	unsigned long flags;
+	struct uart_8250_port *up = up_to_u8250p(port);
 
-	up->dl_write = &fn_fast_uart_dl_write;
-	up->dl_read = &fn_fast_uart_dl_read;
+	if (iir & UART_IIR_NO_INT)
+		return 0;
+
+	spin_lock_irqsave(&port->lock, flags);
+
+	status = serial_port_in(port, UART_LSR);
+
+	if (status & (UART_LSR_DR | UART_LSR_BI)) {
+		if (!up->dma || fn_fast_uart_handle_rx_dma(up, iir))
+			status = serial8250_rx_chars(up, status);
+	}
+	serial8250_modem_status(up);
+	if ((!up->dma || up->dma->tx_err) && (status & UART_LSR_THRE))
+		serial8250_tx_chars(up);
+
+	spin_unlock_irqrestore(&port->lock, flags);
+	return 1;
+}
+
+/* slightly tweaked version of serial8250_default_handle_irq(),
+   which calls fn_fast_uart_handle_irq() instead of
+   serial8250_handle_irq(). */
+static int fn_fast_uart_top_handle_irq(struct uart_port *port)
+{
+	struct uart_8250_port *up = up_to_u8250p(port);
+	unsigned int iir;
+	int ret;
+
+	serial8250_rpm_get(up);
+
+	iir = serial_port_in(port, UART_IIR);
+	ret = fn_fast_uart_handle_irq(port, iir);
+
+	serial8250_rpm_put(up);
+	return ret;
+
 }
 
 static int fn_fast_uart_probe_of(struct uart_port *p,
@@ -285,8 +318,6 @@ static int fn_fast_uart_probe_of(struct uart_port *p,
 	struct uart_8250_port *up = up_to_u8250p(p);
 	u32			val;
 	int id;
-
-	fn_fast_uart_setup_port(up);
 
 	/* if we have a valid fifosize, try hooking up DMA here */
 	if (p->fifosize) {
@@ -326,9 +357,13 @@ static int fn_fast_uart_probe(struct platform_device *pdev)
 	spin_lock_init(&uart.port.lock);
 	uart.port.mapbase = regs->start;
 	uart.port.irq = irq;
-	uart.port.type = PORT_8250;
-	uart.port.flags = UPF_SHARE_IRQ | UPF_BOOT_AUTOCONF | UPF_FIXED_PORT;
+	uart.port.type = PORT_16550A;
+	uart.port.fifosize = FN_FAST_UART_RX_FIFO_SIZE;
+	uart.tx_loadsz = FN_FAST_UART_TX_FIFO_SIZE;
+	uart.port.flags = UPF_SHARE_IRQ | UPF_BOOT_AUTOCONF | UPF_FIXED_PORT | UPF_FIXED_TYPE | UPF_SKIP_TEST;
 	uart.port.dev = &pdev->dev;
+	uart.dl_write = &fn_fast_uart_dl_write;
+	uart.dl_read = &fn_fast_uart_dl_read;
 
 	uart.port.membase = devm_ioremap(&pdev->dev, regs->start,
 					 resource_size(regs));
@@ -358,6 +393,7 @@ static int fn_fast_uart_probe(struct platform_device *pdev)
 	data->dma.txconf.dst_maxburst = 1;
 	data->dma.rx_dma = &fn_fast_uart_rx_dma;
 	
+	uart.port.handle_irq = &fn_fast_uart_top_handle_irq;
 	uart.port.iotype = UPIO_MEM;
 	uart.port.serial_in = fn_fast_uart_serial_in;
 	uart.port.serial_out = fn_fast_uart_serial_out;
