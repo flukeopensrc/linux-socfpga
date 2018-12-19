@@ -3554,6 +3554,8 @@ irq_retry:
 
 		if (usb_status & GOTGCTL_BSESVLD && connected)
 			dwc2_hsotg_core_init_disconnected(hsotg, true);
+		
+		call_gadget(hsotg, reset);
 	}
 
 	if (gintsts & GINTSTS_ENUMDONE) {
