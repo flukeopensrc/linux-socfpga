@@ -4651,8 +4651,8 @@ int dwc2_gadget_init(struct dwc2_hsotg *hsotg)
 	hsotg->gadget.name = dev_name(dev);
 	hsotg->remote_wakeup_allowed = 0;
 
-	if (hsotg->params.lpm)
-		hsotg->gadget.lpm_capable = true;
+//	if (hsotg->params.lpm)
+//		hsotg->gadget.lpm_capable = true;
 
 	if (hsotg->dr_mode == USB_DR_MODE_OTG)
 		hsotg->gadget.is_otg = 1;
