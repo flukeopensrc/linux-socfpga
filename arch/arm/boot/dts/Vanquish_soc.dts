@@ -65,31 +65,41 @@
 			clock-frequency = < 60000000 >;	/* 60.00 MHz */
 			clock-output-names = "Vanquish_FPGA_IO_HPS_CLK-clk";
 		}; //end Vanquish_FPGA_IO_HPS_CLK (Vanquish_FPGA_IO_HPS_CLK)
-    };      
+	};      
 
-    Vanquish_FPGA_IO_alt_vip_vfr_0: vip@0x00044000 {
-        compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
-        reg = < 0xff244000 0x00000080 >;
-        interrupt-parent = < &intc >;
-        interrupts = < 0 43 4 >;
-        clocks = < &Vanquish_FPGA_IO_HPS_CLK &Vanquish_FPGA_IO_HPS_CLK >;
-        clock-names = "clock_reset", "clock_master";
-        max-width = < 480 >;    /* MAX_IMAGE_WIDTH type NUMBER */
-        max-height = < 272 >;   /* MAX_IMAGE_HEIGHT type NUMBER */
-        bits-per-color = < 8 >; /* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
-        colors-per-beat = < 4 >;    /* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
-        beats-per-pixel = < 1 >;    /* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
-        mem-word-width = < 128 >;   /* MEM_PORT_WIDTH type NUMBER */
-    }; //end vip@0x100044000 (Vanquish_FPGA_IO_alt_vip_vfr_0)
+	soc {
+		base-fpga-region {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0xff200000 0x00200000>;
+			fpga-bridges = <&fpga_bridge0>;
+	
+			external-fpga-config;			
 
-    pmu {
-        compatible = "arm,cortex-a9-pmu";
-        interrupt-parent = <&intc>;
-        interrupts = <0 176 4>;
-        interrupt-affinity = <&cpu0>;
-        reg = <0xff111000 0x1000>;
-    };
-		
+			Vanquish_FPGA_IO_alt_vip_vfr_0: vip@0x00044000 {
+				compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
+				reg = < 0x00044000 0x00000080 >;
+				interrupt-parent = < &intc >;
+				interrupts = < 0 43 4 >;
+				clocks = < &Vanquish_FPGA_IO_HPS_CLK &Vanquish_FPGA_IO_HPS_CLK >;
+				clock-names = "clock_reset", "clock_master";
+				max-width = < 480 >;    /* MAX_IMAGE_WIDTH type NUMBER */
+				max-height = < 272 >;   /* MAX_IMAGE_HEIGHT type NUMBER */
+				bits-per-color = < 8 >; /* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
+				colors-per-beat = < 4 >;    /* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
+				beats-per-pixel = < 1 >;    /* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
+				mem-word-width = < 128 >;   /* MEM_PORT_WIDTH type NUMBER */
+			}; //end vip@0x100044000 (Vanquish_FPGA_IO_alt_vip_vfr_0)
+		};
+	};
+	
+	pmu {
+		compatible = "arm,cortex-a9-pmu";
+		interrupt-parent = <&intc>;
+		interrupts = <0 176 4>;
+		interrupt-affinity = <&cpu0>;
+		reg = <0xff111000 0x1000>;
+	};
 };
 
 
