@@ -223,10 +223,14 @@
 
 &uart0 {
 	status = "okay";
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
 };
 
 &uart1 {
 	status = "okay";
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
 };
 
 &usb0 {
