@@ -9,13 +9,13 @@
 	model = "Altera SOCFPGA Cyclone V";	/* appended from boardinfo */
 	compatible = "altr,socfpga-cyclone5", "altr,socfpga";	/* appended from boardinfo */
 
-    chosen {
-        bootargs = "earlyprintk";
-        stdout-path = "serial0:115200n8";
-    };
+	chosen {
+		bootargs = "earlyprintk";
+		stdout-path = "serial0:115200n8";
+	};
 
 	memory {
-        name = "memory";
+		name = "memory";
 		device_type = "memory";
 		reg = <0x00000000 0x40000000>;
 	}; //end memory
@@ -54,20 +54,20 @@
 		clocks = < &h2f_user0_clk >;
 	}; //end splitter@0xff450000 (hps_emac_interface_splitter_0)
 
-    Nighthawk_FPGA_IO_alt_vip_vfr_0: vip@0x100044000 {
-        compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
-        reg = < 0xff244000 0x00000080 >;
-        interrupt-parent = < &intc >;
-        interrupts = < 0 43 4 >;
-        clocks = <&Nighthawk_FPGA_IO_HPS_CLK>,  <&Nighthawk_FPGA_IO_HPS_CLK>;
-        clock-names = "clock_reset", "clock_master";
-        max-width = < 800 >;    /* MAX_IMAGE_WIDTH type NUMBER */
-        max-height = < 480 >;   /* MAX_IMAGE_HEIGHT type NUMBER */
-        bits-per-color = < 8 >; /* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
-        colors-per-beat = < 4 >;    /* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
-        beats-per-pixel = < 1 >;    /* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
-        mem-word-width = < 128 >;   /* MEM_PORT_WIDTH type NUMBER */
-    }; //end vip@0x100044000 (Nighthawk_FPGA_IO_alt_vip_vfr_0)
+	Nighthawk_FPGA_IO_alt_vip_vfr_0: vip@0x100044000 {
+		compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
+		reg = < 0xff244000 0x00000080 >;
+		interrupt-parent = < &intc >;
+		interrupts = < 0 43 4 >;
+		clocks = <&Nighthawk_FPGA_IO_HPS_CLK>,  <&Nighthawk_FPGA_IO_HPS_CLK>;
+		clock-names = "clock_reset", "clock_master";
+		max-width = < 800 >;    /* MAX_IMAGE_WIDTH type NUMBER */
+		max-height = < 480 >;   /* MAX_IMAGE_HEIGHT type NUMBER */
+		bits-per-color = < 8 >; /* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
+		colors-per-beat = < 4 >;    /* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
+		beats-per-pixel = < 1 >;    /* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
+		mem-word-width = < 128 >;   /* MEM_PORT_WIDTH type NUMBER */
+	}; //end vip@0x100044000 (Nighthawk_FPGA_IO_alt_vip_vfr_0)
 };
 
 &gmac0 {
@@ -110,149 +110,148 @@
 };
 
 &mmc0 {
-    status = "disabled";
+	status = "disabled";
 };
 
 
 &i2c0 {
-    status = "ok";
-    speed-mode = <0>;
+	status = "ok";
+	speed-mode = <0>;
 
-    mac_eeprom@50 {
-        compatible = "atmel,24mac402";
-        reg = <0x00000050>;
-        pagesize = <16>;	/* appended from boardinfo */
-    }; //end atmel,24mac402@0x50 (mac_eeprom)
+	mac_eeprom@50 {
+		compatible = "atmel,24mac402";
+		reg = <0x00000050>;
+		pagesize = <16>;	/* appended from boardinfo */
+	}; //end atmel,24mac402@0x50 (mac_eeprom)
 
-    eeprom@51 {
-        compatible = "atmel,24c32";
-        reg = <0x00000051>;
-        pagesize = <32>;	/* appended from boardinfo */
-    }; //end atmel,24c32@0x51 (eeprom)
+	eeprom@51 {
+		compatible = "atmel,24c32";
+		reg = <0x00000051>;
+		pagesize = <32>;	/* appended from boardinfo */
+	}; //end atmel,24c32@0x51 (eeprom)
 }; //end i2c@0xffc04000 (hps_0_i2c0)
 
 &i2c1 {
-    status = "okay";
-    speed-mode = <0>;
+	status = "okay";
+	speed-mode = <0>;
 
-    rtc@51 {
-        compatible = "rtc,pcf8563";
-        reg = <0x51>;
-    };
+	rtc@51 {
+		compatible = "rtc,pcf8563";
+		reg = <0x51>;
+	};
 };
 
 
 &spi0 {
-    #address-cells = < 1 >;  
-    #size-cells = < 0 >;  
-    bus-num = < 0 >;   
-    num-chipselect = < 4 >;  
-    status = "okay";   
+	#address-cells = < 1 >;  
+	#size-cells = < 0 >;  
+	bus-num = < 0 >;   
+	num-chipselect = < 4 >;  
+	status = "okay";   
 
-    temp@1 {
-        compatible = "hwmon,adt7302";
-        reg = < 1 >;  
-        spi-max-frequency = < 100000000 >; 
+	temp@1 {
+		compatible = "hwmon,adt7302";
+		reg = < 1 >;  
+		spi-max-frequency = < 100000000 >; 
 		spi-cpha = <1>;	/* appended from boardinfo */
 		spi-cpol = <1>;	/* appended from boardinfo */
-        enable-dma = < 1 >; 
-    };
+		enable-dma = < 1 >; 
+	};
 
-    spidev@0 {
-        compatible = "spidev";
-        reg = < 0 >;
-        spi-max-frequency = < 100000000 >;
-        enable-dma = < 1 >;
-    };
+	spidev@0 {
+		compatible = "spidev";
+		reg = < 0 >;
+		spi-max-frequency = < 100000000 >;
+		enable-dma = < 1 >;
+	};
 };
 
 &qspi {
-    status = "okay";
-    flash0: n25q00@0 {
-        #address-cells = <1>;
-        #size-cells = <1>;
-        compatible = "n25q00";  /* appended from boardinfo */
-        reg = <0>;      /* chip select */
-        spi-max-frequency = <50000000>;
+	status = "okay";
+	flash0: n25q00@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "n25q00";  /* appended from boardinfo */
+		reg = <0>;      /* chip select */
+		spi-max-frequency = <50000000>;
 
-        cdns,page-size = <256>;
-        cdns,block-size = <16>;
-        cdns,read-delay = <4>;
-        cdns,tshsl-ns = <50>;
-        cdns,tsd2d-ns = <50>;
-        cdns,tchsh-ns = <4>;
-        cdns,tslch-ns = <4>;
-        cdns,is-decoded-cs = <0>;
-        cdns,trigger-address = <0x00000000>; /* future versions of cadence driver will need this */
+		cdns,page-size = <256>;
+		cdns,block-size = <16>;
+		cdns,read-delay = <4>;
+		cdns,tshsl-ns = <50>;
+		cdns,tsd2d-ns = <50>;
+		cdns,tchsh-ns = <4>;
+		cdns,tslch-ns = <4>;
+		cdns,is-decoded-cs = <0>;
+		cdns,trigger-address = <0x00000000>; /* future versions of cadence driver will need this */
 
-        part0: partition@0 {
-                    label = "Flash 0 Raw Data"; /* appended from boardinfo */
-                    reg = < 0x00000000 0x00800000 >;    /* appended from boardinfo */
-        }; //end partition@0 (part0)
+		part0: partition@0 {
+			label = "Flash 0 Raw Data"; /* appended from boardinfo */
+			reg = < 0x00000000 0x00800000 >;    /* appended from boardinfo */
+		}; //end partition@0 (part0)
 
-        part1: partition@800000 {
-                    label = "FPGA/RBF Image "; /* appended from boardinfo */
-                    reg = < 0x00800000 0x00600000 >;    /* appended from boardinfo */
-        }; //end partition@800000 (part1)
+		part1: partition@800000 {
+			label = "FPGA/RBF Image "; /* appended from boardinfo */
+			reg = < 0x00800000 0x00600000 >;    /* appended from boardinfo */
+		}; //end partition@800000 (part1)
 
-        part2: partition@0E00000 {
-                    label = "FPGA Image";   /* appended from boardinfo */
-                    reg = < 0x0E00000 0x00200000 >;    /* appended from boardinfo */
-        }; //end partition@3800000 (part2)
+		part2: partition@0E00000 {
+			label = "FPGA Image";   /* appended from boardinfo */
+			reg = < 0x0E00000 0x00200000 >;    /* appended from boardinfo */
+		}; //end partition@3800000 (part2)
 
-        part3: partition@3e00000 {
-                    label = "Flash 0 FS partition";  /* appended from boardinfo */
-                    reg = < 0x01000000 0x03000000 >;    /* appended from boardinfo */
-        }; //end partition@3e00000 (part3)
-    };
+		part3: partition@3e00000 {
+			label = "Flash 0 FS partition";  /* appended from boardinfo */
+			reg = < 0x01000000 0x03000000 >;    /* appended from boardinfo */
+		}; //end partition@3e00000 (part3)
+	};
 
-    flash1: n25q02@1 {
-        #address-cells = <1>;
-        #size-cells = <1>;
-        compatible = "n25q02";
-        reg = <1>;      /* chip select */
-        spi-max-frequency = <50000000>;
+	flash1: n25q02@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "n25q02";
+		reg = <1>;      /* chip select */
+		spi-max-frequency = <50000000>;
 
-        cdns,page-size = <256>;
-        cdns,block-size = <16>;
-        cdns,read-delay = <4>;
-        cdns,tshsl-ns = <50>;
-        cdns,tsd2d-ns = <50>;
-        cdns,tchsh-ns = <4>;
-        cdns,tslch-ns = <4>;
+		cdns,page-size = <256>;
+		cdns,block-size = <16>;
+		cdns,read-delay = <4>;
+		cdns,tshsl-ns = <50>;
+		cdns,tsd2d-ns = <50>;
+		cdns,tchsh-ns = <4>;
+		cdns,tslch-ns = <4>;
 
-        part4: partition@0 {
-                    label = "Flash 1 Root FS"; /* appended from boardinfo */
-                    reg = < 0x00000000 0x10000000 >;    /* appended from boardinfo */
-        }; //end partition@0 (part4)
-    }; //end n25q00@1 (flash1)
+		part4: partition@0 {
+			label = "Flash 1 Root FS"; /* appended from boardinfo */
+			reg = < 0x00000000 0x10000000 >;    /* appended from boardinfo */
+		}; //end partition@0 (part4)
+	}; //end n25q00@1 (flash1)
 };
 
 &uart0 {
-    status = "okay";
+	status = "okay";
 };
 
 &uart1 {
-    status = "okay";
+	status = "okay";
 };
 
 &usb0 {
-    status = "okay";
+	status = "okay";
 };
 
 &usb1 {
-    status = "okay";
+	status = "okay";
 };
 
 &gpio0 {
-    status = "okay";
+	status = "okay";
 };
 
 &gpio1 {
-    status = "okay";
+	status = "okay";
 };
 
 &gpio2 {
-    status = "okay";
+	status = "okay";
 };
-
