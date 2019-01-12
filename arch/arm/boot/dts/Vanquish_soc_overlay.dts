@@ -234,7 +234,7 @@
 				reg-io-width = < 4 >;	/* embeddedsw.dts.params.reg-io-width type NUMBER */
 				reg-shift = < 2 >;	/* embeddedsw.dts.params.reg-shift type NUMBER */
 				enable-dma = < 1 >;	/* appended from boardinfo */
-				dmas = <&pdma 1 &pdma 2>;
+				dmas = <&pdma 1>, <&pdma 2>;
 				dma-names = "tx", "rx";
 			}; //end serial@0x10004A000 (Vanquish_FPGA_IO_rs232)
 
