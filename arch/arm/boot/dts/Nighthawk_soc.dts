@@ -70,10 +70,6 @@
     }; //end vip@0x100044000 (Nighthawk_FPGA_IO_alt_vip_vfr_0)
 };
 
-&fpga_bridge0 {
-	bridge-enable = <1>;
-};
-
 &gmac0 {
 	phy-mode = "gmii";
 	snps,phy-addr = < 0xFFFFFFFF >;
