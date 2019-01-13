@@ -14,10 +14,6 @@
         __overlay__ {
             #address-cells = <1>;
             #size-cells = <1>;
-            ranges = <0 0xff200000 0x00200000>;
-            fpga-bridges = <&fpga_bridge0>;
-    
-            external-fpga-config;
      
             jtag_uart: serial@0x100020000 {
                 compatible = "altr,juart-15.1", "altr,juart-1.0";
