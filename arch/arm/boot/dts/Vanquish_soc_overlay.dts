@@ -26,6 +26,11 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			
+			ranges = <0 0xff200000 0x00200000>;
+			fpga-bridges = <&fpga_bridge0>;
+	
+			external-fpga-config;
+
 			jtag_uart: serial@0x00020000 {
 				compatible = "altr,juart-14.0", "altr,juart-1.0";
 				reg = < 0x00020000 0x00000008 >;
