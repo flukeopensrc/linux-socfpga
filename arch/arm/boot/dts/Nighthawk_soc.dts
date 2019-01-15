@@ -142,7 +142,7 @@
 	temp@1 {
 		compatible = "hwmon,adt7302";
 		reg = < 1 >;  
-		spi-max-frequency = < 100000000 >; 
+		spi-max-frequency = < 1000000 >; 
 		spi-cpha = <1>;	/* appended from boardinfo */
 		spi-cpol = <1>;	/* appended from boardinfo */
 		enable-dma = < 1 >; 
