@@ -1,0 +1,191 @@
+/*
+ * Copyright Altera Corporation (C) 2012,2014. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "socfpga_cyclone5.dtsi"
+
+/ {
+	model = "Altera SOCFPGA Cyclone V";	
+	compatible = "altr,socfpga-cyclone5", "altr,socfpga";
+
+    chosen {
+        bootargs = "earlyprintk";
+        stdout-path = "serial0:115200n8";
+    }; 
+
+	memory {
+        name = "memory";
+        device_type = "memory";
+        reg = <0x00000000 0x80000000>;
+	}; //end memory
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+		ethernet0 = &gmac1;
+	}; //end aliases
+
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		clk_0: clk_0 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <60000000>;	/* 60.00 MHz */
+			clock-output-names = "clk_0-clk";
+		}; //end clk_0 (clk_0)
+
+		Caldera_FPGA_IO_HPS_CLK: Caldera_FPGA_IO_HPS_CLK {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <60000000>;	/* 60.00 MHz */
+			clock-output-names = "Caldera_FPGA_IO_HPS_CLK-clk";
+		}; //end Caldera_FPGA_IO_HPS_CLK (Caldera_FPGA_IO_HPS_CLK)
+
+	}; //end clocks
+
+    Caldera_FPGA_IO_alt_vip_vfr_0: vip@0x100044000 {
+        compatible = "ALTR,vip-frame-reader-14.0", "ALTR,vip-frame-reader-9.1";
+        reg = <0xff244000 0x00000080>;
+        interrupt-parent = <&intc>;
+        interrupts = <0 46 4>;
+        clocks = <&Caldera_FPGA_IO_HPS_CLK &Caldera_FPGA_IO_HPS_CLK>;
+        clock-names = "clock_reset", "clock_master";
+        max-width = <480>;  /* MAX_IMAGE_WIDTH type NUMBER */
+        max-height = <272>; /* MAX_IMAGE_HEIGHT type NUMBER */
+        bits-per-color = <8>;   /* BITS_PER_PIXEL_PER_COLOR_PLANE type NUMBER */
+        colors-per-beat = <4>;  /* NUMBER_OF_CHANNELS_IN_PARALLEL type NUMBER */
+        beats-per-pixel = <1>;  /* NUMBER_OF_CHANNELS_IN_SEQUENCE type NUMBER */
+        mem-word-width = <128>; /* MEM_PORT_WIDTH type NUMBER */
+    }; //end vip@0x100044000 (Caldera_FPGA_IO_alt_vip_vfr_0)
+};
+
+&gmac1 {
+    status = "okay";
+    phy-mode = "rgmii";
+    snps,phy-addr = < 0xFFFFFFFF >;
+    phy-addr = < 0xFFFFFFFF >;
+
+    rxd0-skew-ps = <0>;
+    rxd1-skew-ps = <0>;
+    rxd2-skew-ps = <0>;
+    rxd3-skew-ps = <0>;
+    txen-skew-ps = <0>;
+    txc-skew-ps = <3000>;
+    rxdv-skew-ps = <0>;
+    rxc-skew-ps = <3000>;
+    max-frame-size = <3800>;
+};
+
+&mmc0 {
+    status = "okay";
+};
+
+&i2c0 {
+    status = "okay";
+    speed-mode = <0>;
+
+    eeprom@51 {
+        compatible = "atmel,24c32";
+        reg = <0x51>;
+        pagesize = <32>;
+    };
+};
+
+&i2c1 {
+    status = "okay";
+    speed-mode = <0>;
+
+    rtc@51 {
+        compatible = "rtc,pcf8563";
+        reg = <0x51>;
+    };
+};
+
+&qspi {
+    status = "okay";
+    flash0: n25q512a@0 {
+        compatible = "n25q512a";	/* appended from boardinfo */
+        reg = <0>;	/* appended from boardinfo */
+        spi-max-frequency = <50000000>;	/* appended from boardinfo */
+
+        cdns,page-size = <256>;	/* appended from boardinfo */
+        cdns,block-size = <16>;	/* appended from boardinfo */
+        cdns,read-delay = <4>;	/* appended from boardinfo */
+        cdns,tshsl-ns = <50>;	/* appended from boardinfo */
+        cdns,tsd2d-ns = <50>;	/* appended from boardinfo */
+        cdns,tchsh-ns = <4>;	/* appended from boardinfo */
+        cdns,tslch-ns = <4>;	/* appended from boardinfo */
+        cdns,is-decoded-cs = <0>;
+
+	    part0: partition@0 {
+	        label = "Flash 0 Raw Data";	/* appended from boardinfo */
+	        reg = <0x00000000 0x00800000>;	/* appended from boardinfo */
+	    }; //end partition@0 (part0)
+
+	    part1: partition@800000 {
+	        label = "FPGA Image";	/* appended from boardinfo */
+	        reg = <0x00800000 0x00600000>;	/* appended from boardinfo */
+	    }; //end partition@800000 (part1)
+
+	    part2: partition@0e00000 {
+	        label = "Splash Screen Image";	/* appended from boardinfo */
+	        reg = <0x00e00000 0x00200000>;	/* appended from boardinfo */
+	    }; //end partition@3800000 (part2)
+
+	    part3: partition@1000000 {
+	        label = "Aux FS Image";	/* appended from boardinfo */
+	        reg = <0x01000000 0x03000000>;	/* appended from boardinfo */
+	    }; //end partition@3e00000 (part3)
+	}; //end n25q512a@0 (flash0)
+
+	flash1: n25q02@1 {
+        #address-cells = <1>;	/* appended from boardinfo */
+        #size-cells = <1>;	/* appended from boardinfo */
+        compatible = "n25q02";	/* appended from boardinfo */
+        reg = <1>;	/* Chip Select */
+        spi-max-frequency = <50000000>;	/* appended from boardinfo */
+        cdns,page-size = <256>;	/* appended from boardinfo */
+        cdns,block-size = <16>;	/* appended from boardinfo */
+        cdns,read-delay = <4>;	/* appended from boardinfo */
+        cdns,tshsl-ns = <50>;	/* appended from boardinfo */
+        cdns,tsd2d-ns = <50>;	/* appended from boardinfo */
+        cdns,tchsh-ns = <4>;	/* appended from boardinfo */
+        cdns,tslch-ns = <4>;	/* appended from boardinfo */
+
+        part4: partition@0 {
+            label = "Root FS (ubifs)";	/* appended from boardinfo */
+            reg = <0x00000000 0x10000000>;	/* appended from boardinfo */
+        }; //end partition@0 (part4)
+    }; //end n25q02@1 (flash1)
+}; //end flash@0xff705000 (hps_0_qspi)
+
+&uart0 {
+    status = "okay";
+};
+
+&uart1 {
+    status = "okay";
+};
+
+&usb0 {
+    status = "okay";
+};
+
+&usb1 {
+    status = "okay";
+};
+
