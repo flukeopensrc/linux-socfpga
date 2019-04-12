@@ -118,6 +118,8 @@
 &qspi {
     status = "okay";
     flash0: n25q512a@0 {
+        #address-cells = <1>;	/* appended from boardinfo */
+        #size-cells = <1>;	/* appended from boardinfo */
         compatible = "n25q512a";	/* appended from boardinfo */
         reg = <0>;	/* appended from boardinfo */
         spi-max-frequency = <50000000>;	/* appended from boardinfo */
