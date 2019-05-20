@@ -243,3 +243,26 @@
 &gpio2 {
 	status = "okay";
 };
+
+&mmc {
+	status = "okay";
+	num-slots = <1>;	/* embeddedsw.dts.params.num-slots type NUMBER */
+	broken-cd;	/* appended from boardinfo */
+	cap-mmc-highspeed;	/* appended from boardinfo */
+	cap-sd-highspeed;	/* appended from boardinfo */
+	cap-mmc_8bit_cap;	/* appended from boardinfo */
+	u-boot,dm-pre-reloc;	/* appended from boardinfo */
+	bus-width = <8>;	/* appended from boardinfo */
+	altr,dw-mshc-ciu-div = <3>;	/* appended from boardinfo */
+	altr,dw-mshc-sdr-timing = <0 3>;	/* appended from boardinfo */
+	supports-highspeed;	/* appended from boardinfo */
+	cd = <&hps_0_gpio0_porta 9 0>;	/* appended from boardinfo */
+	cd-gpios = <&hps_0_gpio0_porta 9 0>;	/* appended from boardinfo */
+	vmmc-supply = <&regulator_3_3v>;	/* appended from boardinfo */
+	vqmmc-supply = <&regulator_3_3v>;	/* appended from boardinfo */
+
+	slot_0: slot@0 {
+		reg = <0>;	/* appended from boardinfo */
+		bus-width = <8>;	/* appended from boardinfo */
+	}; //end slot@0 (slot_0)
+};
