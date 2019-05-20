@@ -205,13 +205,17 @@
             }; //end gpio@0x10004d200 (Nighthawk_FPGA_IO_cadmus_control)
 
             Nighthawk_FPGA_IO_ig_reset: gpio@0x10004d220 {
-                compatible = "altr,pio-15.1", "altr,pio-1.0";
+                compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 reg = < 0x0004d220 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 altr,gpio-bank-width = < 1 >;	/* embeddedsw.dts.params.altr,gpio-bank-width type NUMBER */
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
+                activebits = <0x00000001>;	/* appended from boardinfo */
+                directionbits = <0x00000001>;	/* appended from boardinfo */
+                bidirbits = <0x00000000>;	/* appended from boardinfo */
             }; //end gpio@0x10004d220 (Nighthawk_FPGA_IO_ig_reset)
 
             Nighthawk_FPGA_IO_spi_0: spi@0x100049200 {
