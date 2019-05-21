@@ -31,7 +31,7 @@
 
 	soc {
 		regulator_3_3v: vcc3p3-regulator {
-			compatible = "regulator_fixed";	/* appended from boardinfo */
+			compatible = "regulator-fixed";	/* appended from boardinfo */
 			regulator-name = "3.3V";	/* appended from boardinfo */
 			regulator-min-microvolt = <3300000>;	/* appended from boardinfo */
 			regulator-max-microvolt = <3300000>;	/* appended from boardinfo */
@@ -259,14 +259,9 @@
 	broken-cd;	/* appended from boardinfo */
 	cap-mmc-highspeed;	/* appended from boardinfo */
 	cap-sd-highspeed;	/* appended from boardinfo */
-	cap-mmc_8bit_cap;	/* appended from boardinfo */
-	u-boot,dm-pre-reloc;	/* appended from boardinfo */
 	/* bus-width = <8>; */	/* appended from boardinfo */
     /* temporarily using bus width of 4 instead of 8 until hardware issue is resolved */
 	bus-width = <4>;	/* appended from boardinfo */
-	altr,dw-mshc-ciu-div = <3>;	/* appended from boardinfo */
-	altr,dw-mshc-sdr-timing = <0 3>;	/* appended from boardinfo */
-	supports-highspeed;	/* appended from boardinfo */
 	cd = <&gpio0 9 0>;	/* appended from boardinfo */
 	cd-gpios = <&porta 9 0>;	/* appended from boardinfo */
 	vmmc-supply = <&regulator_3_3v>;	/* appended from boardinfo */
