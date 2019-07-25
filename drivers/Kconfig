@@ -66,8 +66,6 @@ source "drivers/ptp/Kconfig"
 
 source "drivers/pinctrl/Kconfig"
 
-source "drivers/gpib/Kconfig"
-
 source "drivers/gpio/Kconfig"
 
 source "drivers/w1/Kconfig"
