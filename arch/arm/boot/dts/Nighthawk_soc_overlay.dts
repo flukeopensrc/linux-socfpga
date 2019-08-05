@@ -55,16 +55,17 @@
                 timestamp = < 1493922193 >;	/* embeddedsw.dts.params.timestamp type NUMBER */
             }; //end sysid@0x100049540 (Nighthawk_FPGA_IO_sysid)
 
-            Nighthawk_FPGA_IO_fgpib_0: fgpib@0x100049800 {
-                compatible = "flk,fgpib-4.0";
-                reg = < 0x00049800 0x00000020
-                        0x00049840 0x00000004
-                        0x00049880 0x00000004 >;
-                reg-names = "s0", "s1", "s2";
+            Nighthawk_FPGA_IO_fmh_gpib_0: gpib@0x100049800 {
+                compatible = "fmhess,fmh_gpib_core";
+                reg = < 0x00049800 0x00000080 >,
+                    < 0x00049880 0x00000008 >;
+                reg-names = "gpib_control_status", "dma_fifos";
                 interrupt-parent = < &intc >;
                 interrupts = < 0 57 4 >;
                 clocks = < &h2f_user0_clk >;
-            }; //end fgpib@0x100049800 (Nighthawk_FPGA_IO_fgpib_0)
+                dma-names = "rxtx";
+                dmas = < &pdma 0 >;
+            }; //end gpib@0x100049800 (Nighthawk_FPGA_IO_fmh_gpib_0)
 
             Nighthawk_FPGA_IO_Port_A: gpio@0x100049a00 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
