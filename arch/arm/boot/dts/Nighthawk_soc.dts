@@ -223,33 +223,40 @@
 		part6: partition@02000000 {
 			label = "factory backup U-Boot";
 			reg = < 0x02000000 0x00100000 >;
+			read-only;
 		};
 
 		part7: partition@02100000 {
 			label = "factory backup U-Boot environment";
 			reg = < 0x02100000 0x00010000 >;
+			read-only;
 		};
 		
 		part8: partition@02110000 {
 			label = "factory backup flattened device tree";
 			reg = < 0x02110000 0x00010000 >;
+			read-only;
 		};
 
 		part9: partition@02200000 {
 			label = "factory backup Linux rescue kernel";
 			reg = < 0x02200000 0x00600000 >;
+			read-only;
 		};
 
 		part10: partition@02800000 {
 			label = "factory backup FPGA/RBF Image";
 			reg = < 0x02800000 0x00800000 >;
+			read-only;
 		};
 		
 		part11: partition@03000000 {
 			label = "factory backup Flash 0 FS partition";
 			reg = < 0x03000000 0x01000000 >;
+			read-only;
 		};
-
+	};
+	
 	flash1: n25q02@1 {
 		#address-cells = <1>;
 		#size-cells = <1>;
