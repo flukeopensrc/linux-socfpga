@@ -211,12 +211,12 @@
 		};
 
 		part4: partition@00800000 {
-			label = "FPGA/RBF Image "
+			label = "FPGA/RBF Image";
 			reg = < 0x00800000 0x00800000 >;
 		};
 		
 		part5: partition@01000000 {
-			label = "Flash 0 FS partition"
+			label = "Flash 0 FS partition";
 			reg = < 0x00100000 0x01000000 >;
 		};
 		
@@ -241,12 +241,12 @@
 		};
 
 		part10: partition@02800000 {
-			label = "factory backup FPGA/RBF Image"
+			label = "factory backup FPGA/RBF Image";
 			reg = < 0x02800000 0x00800000 >;
 		};
 		
 		part11: partition@03000000 {
-			label = "factory backup Flash 0 FS partition"
+			label = "factory backup Flash 0 FS partition";
 			reg = < 0x03000000 0x01000000 >;
 		};
 
