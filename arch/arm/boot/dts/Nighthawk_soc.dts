@@ -191,7 +191,7 @@
 		cdns,tslch-ns = <4>;
 
 		part0: partition@0 {
-			label = "U-Boot";
+			label = "U-Boot and SPL";
 			reg = < 0x00000000 0x00100000 >;
 		};
 
@@ -216,7 +216,7 @@
 		};
 		
 		part5: partition@01000000 {
-			label = "Flash 0 FS partition";
+			label = "rescue initrd image";
 			reg = < 0x00100000 0x01000000 >;
 		};
 		
@@ -251,7 +251,7 @@
 		};
 		
 		part11: partition@03000000 {
-			label = "factory backup Flash 0 FS partition";
+			label = "factory backup rescue initrd image";
 			reg = < 0x03000000 0x01000000 >;
 			read-only;
 		};
