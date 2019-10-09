@@ -84,14 +84,14 @@ config LOGO_M32R_CLUT224
 
 config LOGO_FLUKE_CLUT224_480X272
 	bool "224-color Fluke Generic Logo 480 by 272"
-	default y
+	default n
 
 config LOGO_FLUKE_CLUT224_640X480
 	bool "224-color Fluke Generic Logo 640 by 480"
-	default y
+	default n
 
 config LOGO_FLUKE_CLUT224_800X480
 	bool "224-color Fluke Generic Logo 800 by 480"
-	default y
+	default n
 
 endif # LOGO
