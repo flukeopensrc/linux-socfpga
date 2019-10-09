@@ -111,14 +111,14 @@ const struct linux_logo * __ref fb_find_logo(int depth)
 		/* M32R Linux logo */
 		logo = &logo_m32r_clut224;
 #endif
-#ifdef CONFIG_LOGO_FLUKE_CLUT224_480X272
-		logo = &logo_fluke_clut224_480x272;
+#ifdef CONFIG_LOGO_FLUKE_480X272_CLUT224
+		logo = &logo_fluke_480x272_clut224;
 #endif
-#ifdef CONFIG_LOGO_FLUKE_CLUT224_640X480
-		logo = &logo_fluke_clut224_640x480;
+#ifdef CONFIG_LOGO_FLUKE_640X480_CLUT224
+		logo = &logo_fluke_640x480_clut224;
 #endif
-#ifdef CONFIG_LOGO_FLUKE_CLUT224_800X480
-		logo = &logo_fluke_clut224_800x480;
+#ifdef CONFIG_LOGO_FLUKE_800X480_CLUT224
+		logo = &logo_fluke_800x480_clut224;
 #endif
 	}
 	return logo;

@@ -15,9 +15,9 @@ obj-$(CONFIG_LOGO_SUPERH_MONO)		+= logo_superh_mono.o
 obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o
 obj-$(CONFIG_LOGO_SUPERH_CLUT224)	+= logo_superh_clut224.o
 obj-$(CONFIG_LOGO_M32R_CLUT224)		+= logo_m32r_clut224.o
-obj-$(CONFIG_LOGO_FLUKE_CLUT224_480X272)	+= logo_fluke_clut224_480x272.o
-obj-$(CONFIG_LOGO_FLUKE_CLUT224_640X480)	+= logo_fluke_clut224_640x480.o
-obj-$(CONFIG_LOGO_FLUKE_CLUT224_800X480)	+= logo_fluke_clut224_800x480.o
+obj-$(CONFIG_LOGO_FLUKE_480X272_CLUT224)	+= logo_fluke_480x272_clut224.o
+obj-$(CONFIG_LOGO_FLUKE_640X480_CLUT224)	+= logo_fluke_640x480_clut224.o
+obj-$(CONFIG_LOGO_FLUKE_800X480_CLUT224)	+= logo_fluke_800x480_clut224.o
 
 obj-$(CONFIG_SPU_BASE)			+= logo_spe_clut224.o
 
