@@ -316,6 +316,6 @@
 
 	slot_0: slot@0 {
 		reg = <0>;	/* appended from boardinfo */
-		bus-width = <4>;	/* appended from boardinfo */
+		bus-width = <8>;	/* appended from boardinfo */
 	}; //end slot@0 (slot_0)
 };
