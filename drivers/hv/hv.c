@@ -33,9 +33,7 @@
 #include "hyperv_vmbus.h"
 
 /* The one and only */
-struct hv_context hv_context = {
-	.synic_initialized	= false,
-};
+struct hv_context hv_context;
 
 /*
  * If false, we're using the old mechanism for stimer0 interrupts
@@ -143,7 +141,7 @@ static int hv_ce_shutdown(struct clock_event_device *evt)
 
 static int hv_ce_set_oneshot(struct clock_event_device *evt)
 {
-	union hv_timer_config timer_cfg;
+	union hv_stimer_config timer_cfg;
 
 	timer_cfg.as_uint64 = 0;
 	timer_cfg.enable = 1;
@@ -326,8 +324,6 @@ int hv_synic_init(unsigned int cpu)
 
 	hv_set_synic_state(sctrl.as_uint64);
 
-	hv_context.synic_initialized = true;
-
 	/*
 	 * Register the per-cpu clockevent source.
 	 */
@@ -373,7 +369,8 @@ int hv_synic_cleanup(unsigned int cpu)
 	bool channel_found = false;
 	unsigned long flags;
 
-	if (!hv_context.synic_initialized)
+	hv_get_synic_state(sctrl.as_uint64);
+	if (sctrl.enable != 1)
 		return -EFAULT;
 
 	/*
@@ -411,7 +408,6 @@ int hv_synic_cleanup(unsigned int cpu)
 
 		clockevents_unbind_device(hv_cpu->clk_evt, cpu);
 		hv_ce_shutdown(hv_cpu->clk_evt);
-		put_cpu_ptr(hv_cpu);
 	}
 
 	hv_get_synint_state(VMBUS_MESSAGE_SINT, shared_sint.as_uint64);
@@ -435,7 +431,6 @@ int hv_synic_cleanup(unsigned int cpu)
 	hv_set_siefp(siefp.as_uint64);
 
 	/* Disable the global synic bit */
-	hv_get_synic_state(sctrl.as_uint64);
 	sctrl.enable = 0;
 	hv_set_synic_state(sctrl.as_uint64);
 

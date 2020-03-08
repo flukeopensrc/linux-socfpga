@@ -118,9 +118,7 @@ static DEFINE_IDA(hwmon_ida);
  * The complex conditional is necessary to avoid a cyclic dependency
  * between hwmon and thermal_sys modules.
  */
-#if IS_REACHABLE(CONFIG_THERMAL) && defined(CONFIG_THERMAL_OF) && \
-	(!defined(CONFIG_THERMAL_HWMON) || \
-	 !(defined(MODULE) && IS_MODULE(CONFIG_THERMAL)))
+#ifdef CONFIG_THERMAL_OF
 static int hwmon_thermal_get_temp(void *data, int *temp)
 {
 	struct hwmon_thermal_data *tdata = data;
@@ -267,7 +265,7 @@ static struct attribute *hwmon_genattr(struct device *dev,
 	struct device_attribute *dattr;
 	struct attribute *a;
 	umode_t mode;
-	char *name;
+	const char *name;
 	bool is_string = is_string_attr(type, attr);
 
 	/* The attribute is invisible if there is no template string */
@@ -278,10 +276,10 @@ static struct attribute *hwmon_genattr(struct device *dev,
 	if (!mode)
 		return ERR_PTR(-ENOENT);
 
-	if ((mode & S_IRUGO) && ((is_string && !ops->read_string) ||
+	if ((mode & 0444) && ((is_string && !ops->read_string) ||
 				 (!is_string && !ops->read)))
 		return ERR_PTR(-EINVAL);
-	if ((mode & S_IWUGO) && !ops->write)
+	if ((mode & 0222) && !ops->write)
 		return ERR_PTR(-EINVAL);
 
 	hattr = devm_kzalloc(dev, sizeof(*hattr), GFP_KERNEL);
@@ -289,7 +287,7 @@ static struct attribute *hwmon_genattr(struct device *dev,
 		return ERR_PTR(-ENOMEM);
 
 	if (type == hwmon_chip) {
-		name = (char *)template;
+		name = template;
 	} else {
 		scnprintf(hattr->name, sizeof(hattr->name), template,
 			  index + hwmon_attr_base(type));
@@ -324,6 +322,11 @@ static const char * const hwmon_chip_attrs[] = {
 	[hwmon_chip_power_reset_history] = "power_reset_history",
 	[hwmon_chip_update_interval] = "update_interval",
 	[hwmon_chip_alarms] = "alarms",
+	[hwmon_chip_samples] = "samples",
+	[hwmon_chip_curr_samples] = "curr_samples",
+	[hwmon_chip_in_samples] = "in_samples",
+	[hwmon_chip_power_samples] = "power_samples",
+	[hwmon_chip_temp_samples] = "temp_samples",
 };
 
 static const char * const hwmon_temp_attr_templates[] = {

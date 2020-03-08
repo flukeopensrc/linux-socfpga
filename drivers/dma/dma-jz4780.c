@@ -1,13 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Ingenic JZ4780 DMA controller
  *
  * Copyright (c) 2015 Imagination Technologies
  * Author: Alex Smith <alex@alex-smith.me.uk>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation;  either version 2 of the  License, or (at your
- * option) any later version.
  */
 
 #include <linux/clk.h>
@@ -838,9 +834,8 @@ static int jz4780_dma_probe(struct platform_device *pdev)
 	if (!soc_data)
 		return -EINVAL;
 
-	jzdma = devm_kzalloc(dev, sizeof(*jzdma)
-				+ sizeof(*jzdma->chan) * soc_data->nb_channels,
-				GFP_KERNEL);
+	jzdma = devm_kzalloc(dev, struct_size(jzdma, chan,
+			     soc_data->nb_channels), GFP_KERNEL);
 	if (!jzdma)
 		return -ENOMEM;
 
