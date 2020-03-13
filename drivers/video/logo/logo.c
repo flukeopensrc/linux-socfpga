@@ -100,6 +100,15 @@ const struct linux_logo * __ref fb_find_logo(int depth)
 		/* SuperH Linux logo */
 		logo = &logo_superh_clut224;
 #endif
+#ifdef CONFIG_LOGO_FLUKE_480X272_CLUT224
+		logo = &logo_fluke_480x272_clut224;
+#endif
+#ifdef CONFIG_LOGO_FLUKE_640X480_CLUT224
+		logo = &logo_fluke_640x480_clut224;
+#endif
+#ifdef CONFIG_LOGO_FLUKE_800X480_CLUT224
+		logo = &logo_fluke_800x480_clut224;
+#endif
 	}
 	return logo;
 }

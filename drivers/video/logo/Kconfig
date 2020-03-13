@@ -68,4 +68,16 @@ config LOGO_SUPERH_CLUT224
 	depends on SUPERH
 	default y
 
+config LOGO_FLUKE_480X272_CLUT224
+	bool "224-color Fluke Generic Logo 480 by 272"
+	default n
+
+config LOGO_FLUKE_640X480_CLUT224
+	bool "224-color Fluke Generic Logo 640 by 480"
+	default n
+
+config LOGO_FLUKE_800X480_CLUT224
+	bool "224-color Fluke Generic Logo 800 by 480"
+	default n
+
 endif # LOGO
