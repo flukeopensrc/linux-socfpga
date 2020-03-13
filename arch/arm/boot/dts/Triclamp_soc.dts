@@ -106,7 +106,7 @@
 	flash0: n25q512a@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "n25q512a";
+		compatible = "jedec,spi-nor";
 		reg = <0>;      /* chip select */
 		spi-max-frequency = <50000000>;
 
@@ -143,7 +143,7 @@
 	flash1: n25q00@1 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "n25q00";
+		compatible = "jedec,spi-nor";
 		reg = <1>;      /* chip select */
 		spi-max-frequency = <50000000>;
 
