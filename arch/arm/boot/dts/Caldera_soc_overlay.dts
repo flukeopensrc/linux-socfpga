@@ -1,0 +1,229 @@
+/*
+ * Copyright Altera Corporation (C) 2015. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+ /dts-v1/ /plugin/;
+/ {
+
+    fragment@0 {
+        target-path = "/soc/base-fpga-region";
+        #address-cells = < 1 >;
+        #size-cells = < 0 >;
+
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            ranges = <0 0xff200000 0x00200000>;
+            fpga-bridges = <&fpga_bridge0>;
+
+            external-fpga-config;
+
+			jtag_uart: serial@0x100020000 {
+				compatible = "altr,juart-17.0", "altr,juart-1.0";
+				reg = <0x00020000 0x00000008>;
+				interrupt-parent = <&intc>;
+				interrupts = <0 42 4>;
+				clocks = <&clk_0>;
+			}; //end serial@0x100020000 (jtag_uart)
+
+			Caldera_FPGA_IO_rs232: serial@0x10004a000 {
+				compatible = "snps,dw-apb-uart-14.0", "snps,dw-apb-uart";	/* appended from boardinfo */
+				reg = <0x0004a000 0x00000200>;
+				interrupt-parent = <&intc>;
+				interrupts = <0 44 4>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				auto-flow-control = <1>;	/* embeddedsw.dts.params.auto-flow-control type NUMBER */
+				clock-frequency = <60000000>;	/* embeddedsw.dts.params.clock-frequency type NUMBER */
+				fifo-size = <128>;	/* embeddedsw.dts.params.fifo-size type NUMBER */
+				reg-io-width = <4>;	/* embeddedsw.dts.params.reg-io-width type NUMBER */
+				reg-shift = <2>;	/* embeddedsw.dts.params.reg-shift type NUMBER */
+			}; //end serial@0x10004a000 (Caldera_FPGA_IO_rs232)
+
+			Caldera_FPGA_IO_fkeypad_0: fkeypad@0x10004a380 {
+				compatible = "flk,fkeypad-1.0";
+				reg = <0x0004a380 0x00000008>;
+				interrupt-parent = <&intc>;
+				interrupts = <0 40 4>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+			}; //end fkeypad@0x10004a380 (Caldera_FPGA_IO_fkeypad_0)
+
+			Caldera_FPGA_IO_vfb_180_0: unknown@0x10004a700 {
+				compatible = "unknown,unknown-2.0";
+				reg = <0x0004a700 0x00000080>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK &Caldera_FPGA_IO_HPS_CLK>;
+				clock-names = "avs_clock", "clk";
+			}; //end unknown@0x10004a700 (Caldera_FPGA_IO_vfb_180_0)
+
+			Caldera_FPGA_IO_sysid: sysid@0x100049540 {
+				compatible = "altr,sysid-17.0", "altr,sysid-1.0";
+				reg = <0x00049540 0x00000008>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				id = <1664196610>;	/* embeddedsw.dts.params.id type NUMBER */
+				timestamp = <1530048163>;	/* embeddedsw.dts.params.timestamp type NUMBER */
+			}; //end sysid@0x100049540 (Caldera_FPGA_IO_sysid)
+
+			Caldera_FPGA_IO_Port_A: gpio@0x100049a00 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x00049a00 0x00000020>;
+				interrupt-parent = <&intc>;
+				interrupts = <0 43 1>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				altr,interrupt-type = <1>;	/* embeddedsw.dts.params.altr,interrupt-type type NUMBER */
+				edge_type = <0>;	/* embeddedsw.dts.params.edge_type type NUMBER */
+				level_trigger = <0>;	/* embeddedsw.dts.params.level_trigger type NUMBER */
+				resetvalue = <66>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x0000007f>;	/* appended from boardinfo */
+				directionbits = <0x00000001>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+				flk,interrupt_type = <1>;	/* appended from boardinfo */
+			}; //end gpio@0x100049a00 (Caldera_FPGA_IO_Port_A)
+
+			Caldera_FPGA_IO_led_pio: gpio@0x100049180 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x00049180 0x00000020>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x00000003>;	/* appended from boardinfo */
+				directionbits = <0x00000003>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x100049180 (Caldera_FPGA_IO_led_pio)
+
+			Caldera_FPGA_IO_LCD_PWM_DAC: gpio@0x100049cc0 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x00049cc0 0x00000020>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <127>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x000000ff>;	/* appended from boardinfo */
+				directionbits = <0x000000ff>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x100049cc0 (Caldera_FPGA_IO_LCD_PWM_DAC)
+
+			Caldera_FPGA_IO_Beeper_Counter: unknown@0x100049b00 {
+				compatible = "altr,cntr-1.0";	/* appended from boardinfo */
+				reg = <0x00049b00 0x00000020>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+			}; //end unknown@0x100049b00 (Caldera_FPGA_IO_Beeper_Counter)
+
+			Caldera_FPGA_IO_Beeper_Enable: gpio@0x100049b40 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x00049b40 0x00000020>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x00000001>;	/* appended from boardinfo */
+				directionbits = <0x00000001>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x100049b40 (Caldera_FPGA_IO_Beeper_Enable)
+
+			Caldera_FPGA_IO_LCD_PWM_FREQ: gpio@0x100049ec0 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x00049ec0 0x00000020>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <181>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x000000ff>;	/* appended from boardinfo */
+				directionbits = <0x000000ff>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x100049ec0 (Caldera_FPGA_IO_LCD_PWM_FREQ)
+
+			Caldera_FPGA_IO_LP_LED_RED: gpio@0x10004a200 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x0004a200 0x00000010>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x000000ff>;	/* appended from boardinfo */
+				directionbits = <0x000000ff>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x10004a200 (Caldera_FPGA_IO_LP_LED_RED)
+
+			Caldera_FPGA_IO_LP_LED_GREEN: gpio@0x10004a240 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x0004a240 0x00000010>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x000000ff>;	/* appended from boardinfo */
+				directionbits = <0x000000ff>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x10004a240 (Caldera_FPGA_IO_LP_LED_GREEN)
+
+			Caldera_FPGA_IO_LP_LED_BLUE: gpio@0x10004a280 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x0004a280 0x00000010>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x000000ff>;	/* appended from boardinfo */
+				directionbits = <0x000000ff>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x10004a280 (Caldera_FPGA_IO_LP_LED_BLUE)
+
+			Caldera_FPGA_IO_KP_LED: gpio@0x10004a2c0 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x0004a2c0 0x00000010>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x0000000f>;	/* appended from boardinfo */
+				directionbits = <0x0000000f>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x10004a2c0 (Caldera_FPGA_IO_KP_LED)
+
+			Caldera_FPGA_IO_fpga_reset: gpio@0x10004a600 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x0004a600 0x00000010>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x00000001>;	/* appended from boardinfo */
+				directionbits = <0x00000001>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x10004a600 (Caldera_FPGA_IO_fpga_reset)
+
+			Caldera_FPGA_IO_Backplane_GPIO: gpio@0x10004a800 {
+				compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+				reg = <0x0004a800 0x00000020>;
+				clocks = <&Caldera_FPGA_IO_HPS_CLK>;
+				resetvalue = <0>;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+				#gpio-cells = <2>;
+				gpio-controller;
+				activebits = <0x00000007>;	/* appended from boardinfo */
+				directionbits = <0x00000006>;	/* appended from boardinfo */
+				bidirbits = <0x00000000>;	/* appended from boardinfo */
+			}; //end gpio@0x10004a800 (Caldera_FPGA_IO_Backplane_GPIO)
+		}; //end bridge@0xc0000000 (hps_0_bridges)
+
+		fpgabridge0: fpgabridge@0 {
+			compatible = "altr,socfpga-hps2fpga-bridge";	/* appended from boardinfo */
+			label = "hps2fpga";	/* appended from boardinfo */
+			clocks = <&l4_main_clk>;	/* appended from boardinfo */
+		}; //end fpgabridge@0 (fpgabridge0)
+
+	}; //end sopc@0 (sopc0)
+}; //end /
