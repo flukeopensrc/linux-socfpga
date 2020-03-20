@@ -204,6 +204,7 @@ static int altvipfb_probe(struct platform_device *pdev)
 {
 	int retval;
 	void *fbmem_virt;
+	dma_addr_t dma_address;
 	struct altvipfb_dev *fbdev;
 
 	fbdev = devm_kzalloc(&pdev->dev, sizeof(*fbdev), GFP_KERNEL);
@@ -217,9 +218,9 @@ static int altvipfb_probe(struct platform_device *pdev)
 
 	retval = altvipfb_setup_fb_info(fbdev);
 
-	fbmem_virt = dma_alloc_coherent(NULL,
+	fbmem_virt = dma_alloc_coherent(&pdev->dev,
 					fbdev->info.fix.smem_len,
-					(void *)&(fbdev->info.fix.smem_start),
+					&dma_address,
 					GFP_KERNEL);
 	if (!fbmem_virt) {
 		dev_err(&pdev->dev,
@@ -227,7 +228,7 @@ static int altvipfb_probe(struct platform_device *pdev)
 			fbdev->info.fix.smem_len);
 		return retval;
 	}
-
+	fbdev->info.fix.smem_start = dma_address;
 	fbdev->info.screen_base = fbmem_virt;
 
 	retval = fb_alloc_cmap(&fbdev->info.cmap, PALETTE_SIZE, 0);
