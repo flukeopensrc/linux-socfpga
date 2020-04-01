@@ -131,11 +131,12 @@ int altvipfb2_probe(struct device *dev, void __iomem *base)
 {
 	int retval;
 	void *fbmem_virt;
+	dma_addr_t dma_address;
 	struct altvipfb2_priv *fbpriv = dev_get_drvdata(dev);
 
-	fbmem_virt = dma_alloc_coherent(NULL,
+	fbmem_virt = dma_alloc_coherent(dev,
 					fbpriv->info.fix.smem_len,
-					(void *)&fbpriv->info.fix.smem_start,
+					&dma_address,
 					GFP_KERNEL);
 	if (!fbmem_virt) {
 		dev_err(dev,
@@ -143,7 +144,7 @@ int altvipfb2_probe(struct device *dev, void __iomem *base)
 			fbpriv->info.fix.smem_len);
 		return -ENOMEM;
 	}
-
+	fbpriv->info.fix.smem_start = dma_address;
 	fbpriv->info.screen_base = (char *)fbmem_virt;
 
 	retval = fb_alloc_cmap(&fbpriv->info.cmap, PALETTE_SIZE, 0);
