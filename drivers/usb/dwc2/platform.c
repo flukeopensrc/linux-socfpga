@@ -337,7 +337,9 @@ static void dwc2_driver_shutdown(struct platform_device *dev)
 {
 	struct dwc2_hsotg *hsotg = platform_get_drvdata(dev);
 
-	disable_irq(hsotg->irq);
+	dwc2_writel(hsotg, 0, GINTMSK);
+	dwc2_writel(hsotg, 0, HAINTMSK);
+	dwc2_writel(hsotg, 0, DAINTMSK);
 }
 
 /**
