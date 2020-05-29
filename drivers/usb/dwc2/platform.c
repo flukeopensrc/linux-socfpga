@@ -338,6 +338,7 @@ static void dwc2_driver_shutdown(struct platform_device *dev)
 	struct dwc2_hsotg *hsotg = platform_get_drvdata(dev);
 
 	dwc2_disable_global_interrupts(hsotg);
+	synchronize_irq(hsotg->irq);
 }
 
 /**
