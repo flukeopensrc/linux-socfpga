@@ -70,11 +70,13 @@
 
             Nighthawk_FPGA_IO_Port_A: gpio@0x100049a00 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
                 interrupt-parent = < &intc >;
                 interrupts = < 0 59 1 >;
                 clocks = < &h2f_user0_clk >;
-                altr,interrupt-type = < 1 >;	/* embeddedsw.dts.params.altr,interrupt-type type NUMBER */
+                altr,interrupt-type = < 1 >;
+                altr,ngpio = <7>;
                 edge_type = < 0 >;	/* embeddedsw.dts.params.edge_type type NUMBER */
                 level_trigger = < 0 >;	/* embeddedsw.dts.params.level_trigger type NUMBER */
                 resetvalue = < 50 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
@@ -87,9 +89,11 @@
             }; //end gpio@0x100049a00 (Nighthawk_FPGA_IO_Port_A)
 
             Nighthawk_FPGA_IO_led_pio: gpio@0x100049180 {
-                compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                compatible = "flk,fgpio-1.0";
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049180 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <1>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -100,8 +104,10 @@
 
             Nighthawk_FPGA_IO_LCD_PWM_DAC: gpio@0x100049cc0 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049cc0 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <8>;
                 resetvalue = < 127 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -118,8 +124,10 @@
 
             Nighthawk_FPGA_IO_Beeper_Enable: gpio@0x100049b40 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049b40 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <1>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -130,8 +138,10 @@
 
             Nighthawk_FPGA_IO_LCD_PWM_FREQ: gpio@0x100049ec0 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049ec0 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <8>;
                 resetvalue = < 181 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -142,6 +152,7 @@
 
             Nighthawk_FPGA_IO_Knob_PIO: gpio@0x100049f40 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049f40 0x00000010 >;
                 interrupt-parent = < &intc >;
                 interrupts = < 0 60 1 >;
@@ -149,6 +160,7 @@
                 altr,interrupt-type = < 1 >;	/* embeddedsw.dts.params.altr,interrupt-type type NUMBER */
                 edge_type = < 0 >;	/* embeddedsw.dts.params.edge_type type NUMBER */
                 level_trigger = < 0 >;	/* embeddedsw.dts.params.level_trigger type NUMBER */
+                altr,ngpio = <9>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -160,8 +172,10 @@
 
             Nighthawk_FPGA_IO_MSP_PIO: gpio@0x10004a400 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004a400 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <1>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -172,8 +186,10 @@
 
             Nighthawk_FPGA_IO_gpib_disable: gpio@0x10004a440 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004a440 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <1>;
                 resetvalue = < 1 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -184,8 +200,10 @@
 
             Nighthawk_FPGA_IO_fpga_reset: gpio@0x10004a600 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004a600 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <1>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -196,8 +214,10 @@
 
             Nighthawk_FPGA_IO_cadmus_control: gpio@0x10004d200 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004d200 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
+                altr,ngpio = <5>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
@@ -208,9 +228,10 @@
 
             Nighthawk_FPGA_IO_ig_reset: gpio@0x10004d220 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004d220 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
-                altr,gpio-bank-width = < 1 >;	/* embeddedsw.dts.params.altr,gpio-bank-width type NUMBER */
+                altr,ngpio = < 1 >;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
