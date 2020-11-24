@@ -524,6 +524,12 @@ static int ksz9031_of_load_skew_values(struct phy_device *phydev,
 	maxval = (field_sz == 4) ? 0xf : 0x1f;
 	for (i = 0; i < numfields; i++)
 		if (val[i] != -(i + 1)) {
+			if (val[i] > KSZ9031_PS_TO_REG * maxval)
+			{
+				phydev_warn (phydev, "adjusting value of %d for %s which exceeds maximum of %d",
+					val[i], field[i], (KSZ9031_PS_TO_REG * maxval));
+				val[i] = KSZ9031_PS_TO_REG * maxval;
+			}
 			mask = 0xffff;
 			mask ^= maxval << (field_sz * i);
 			newval = (newval & mask) |
