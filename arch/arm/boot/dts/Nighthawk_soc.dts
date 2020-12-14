@@ -312,9 +312,9 @@
 	cd-gpios = <&porta 9 0>;	/* appended from boardinfo */
 	vmmc-supply = <&regulator_3_3v>;	/* appended from boardinfo */
 	vqmmc-supply = <&regulator_3_3v>;	/* appended from boardinfo */
+	bus-width = <8>;	/* appended from boardinfo */
 
 	slot_0: slot@0 {
 		reg = <0>;	/* appended from boardinfo */
-		bus-width = <8>;	/* appended from boardinfo */
 	}; //end slot@0 (slot_0)
 };
