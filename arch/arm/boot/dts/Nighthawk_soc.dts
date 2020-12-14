@@ -116,11 +116,6 @@
 	rx-fifo-depth = <4096>;	/* embeddedsw.dts.params.rx-fifo-depth type NUMBER */
 };
 
-&mmc0 {
-	status = "disabled";
-};
-
-
 &i2c0 {
 	status = "ok";
 	speed-mode = <0>;
@@ -311,7 +306,7 @@
 	status = "okay";
 };
 
-&mmc {
+&mmc0 {
 	status = "okay";
 	cd = <&gpio0 9 0>;	/* appended from boardinfo */
 	cd-gpios = <&porta 9 0>;	/* appended from boardinfo */
