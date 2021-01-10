@@ -108,7 +108,7 @@
                 reg = < 0x00049cc0 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
                 altr,ngpio = <8>;
-                resetvalue = < 127 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+                resetvalue = < 125 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
                 #gpio-cells = < 2 >;
                 gpio-controller;
                 activebits = < 0x000000ff >;	/* appended from boardinfo */
@@ -239,6 +239,18 @@
                 directionbits = <0x00000001>;	/* appended from boardinfo */
                 bidirbits = <0x00000000>;	/* appended from boardinfo */
             }; //end gpio@0x10004d220 (Nighthawk_FPGA_IO_ig_reset)
+
+            Nighthawk_FPGA_IO_LCD_PWM_VCOM: gpio@0x10004d240 {
+                compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
+                reg = < 0x0004d240 0x00000010 >;
+                clocks = < &h2f_user0_clk >;
+                resetvalue = < 127 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
+                #gpio-cells = < 2 >;
+                gpio-controller;
+                activebits = <0x000000ff>;	/* appended from boardinfo */
+                directionbits = <0x000000ff>;	/* appended from boardinfo */
+                bidirbits = <0x00000000>;	/* appended from boardinfo */
+            }; //end gpio@0x10004d240 (Nighthawk_FPGA_IO_LCD_PWM_VCOM)
 
             Nighthawk_FPGA_IO_spi_0: spi@0x100049200 {
                 compatible = "altr,spi-15.1", "altr,spi-1.0";
