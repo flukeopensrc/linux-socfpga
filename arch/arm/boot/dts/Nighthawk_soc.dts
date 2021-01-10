@@ -119,18 +119,6 @@
 &i2c0 {
 	status = "ok";
 	speed-mode = <0>;
-
-	mac_eeprom@50 {
-		compatible = "atmel,24mac402";
-		reg = <0x00000050>;
-		pagesize = <16>;	/* appended from boardinfo */
-	}; //end atmel,24mac402@0x50 (mac_eeprom)
-
-	eeprom@51 {
-		compatible = "atmel,24c32";
-		reg = <0x00000051>;
-		pagesize = <32>;	/* appended from boardinfo */
-	}; //end atmel,24c32@0x51 (eeprom)
 }; //end i2c@0xffc04000 (hps_0_i2c0)
 
 &i2c1 {
