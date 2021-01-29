@@ -519,6 +519,13 @@ int dwc2_core_reset(struct dwc2_hsotg *hsotg, bool skip_wait)
 		}
 	}
 
+	/* Fluke CDA: soft reset fails to zero the PCGCTL register, so
+	 * we need to do it manually.  Otherwise, the phy clock can
+	 * be left in low power mode after reset with the clock
+	 * disabled, making the usb controller not work.
+	 */
+	dwc2_writel(hsotg, 0, PCGCTL);
+
 	/* Core Soft Reset */
 	greset = dwc2_readl(hsotg, GRSTCTL);
 	greset |= GRSTCTL_CSFTRST;
