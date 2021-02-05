@@ -169,6 +169,11 @@
 	/delete-property/ dma-names;
 };
 
+&usbphy0 {
+	clocks = < &h2f_user0_clk >;
+	clock-names = "main_clk";
+};
+
 &usb0 {
 	status = "okay";
 };
