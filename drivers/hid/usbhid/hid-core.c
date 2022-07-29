@@ -281,7 +281,7 @@ int i;
 		printk("xfer: ");
 		for (i = 0; i < urb->actual_length; ++i)
 		{
-			printk("%x ", (int)urb->transfer_buffer[i]);
+			printk("%i ", (int)((char*)urb->transfer_buffer)[i]);
 		}
 		printk("\n");
 		usbhid->retry_delay = 0;
