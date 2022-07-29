@@ -108,9 +108,11 @@ static void usb_kbd_irq(struct urb *urb)
 	case -ECONNRESET:	/* unlink */
 	case -ENOENT:
 	case -ESHUTDOWN:
+printk("usb_kbd_irq urb error %i\n", (int)urb->status);
 		return;
 	/* -EPIPE:  should clear the halt */
 	default:		/* error */
+printk("usb_kbd_irq urb error %i, resubmitting\n", (int)urb->status);
 		goto resubmit;
 	}
 

@@ -273,6 +273,8 @@ static void hid_irq_in(struct urb *urb)
 	struct hid_device	*hid = urb->context;
 	struct usbhid_device	*usbhid = hid->driver_data;
 	int			status;
+if (urb->status)
+	printk("nonzero urb status %i\n", (int)urb->status);
 
 	switch (urb->status) {
 	case 0:			/* success */
@@ -281,9 +283,11 @@ static void hid_irq_in(struct urb *urb)
 			break;
 		usbhid_mark_busy(usbhid);
 		if (!test_bit(HID_RESUME_RUNNING, &usbhid->iofl)) {
-			hid_input_report(urb->context, HID_INPUT_REPORT,
+			status = hid_input_report(urb->context, HID_INPUT_REPORT,
 					 urb->transfer_buffer,
 					 urb->actual_length, 1);
+			if (status)
+				{printk("hid_input_report returned error %i", status);}
 			/*
 			 * autosuspend refused while keys are pressed
 			 * because most keyboards don't wake up when
@@ -293,6 +297,9 @@ static void hid_irq_in(struct urb *urb)
 				set_bit(HID_KEYS_PRESSED, &usbhid->iofl);
 			else
 				clear_bit(HID_KEYS_PRESSED, &usbhid->iofl);
+		}else
+		{
+			printk("skipped input urb due to HID_RESUME_RUNNING\n");
 		}
 		break;
 	case -EPIPE:		/* stall */
