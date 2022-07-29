@@ -146,6 +146,7 @@ static void __evdev_queue_syn_dropped(struct evdev_client *client)
 	struct timespec64 ts = ktime_to_timespec64(ev_time[client->clk_type]);
 	struct input_event ev;
 
+printk("SYN_DROPPED in __evdev_queue_syn_dropped\n");
 	ev.input_event_sec = ts.tv_sec;
 	ev.input_event_usec = ts.tv_nsec / NSEC_PER_USEC;
 	ev.type = EV_SYN;
@@ -156,6 +157,7 @@ static void __evdev_queue_syn_dropped(struct evdev_client *client)
 	client->head &= client->bufsize - 1;
 
 	if (unlikely(client->head == client->tail)) {
+printk("SYN_DROPPED caused additional queue drop in __evdev_queue_syn_dropped\n");
 		/* drop queue but keep our SYN_DROPPED event */
 		client->tail = (client->head - 1) & (client->bufsize - 1);
 		client->packet_head = client->tail;
@@ -218,6 +220,7 @@ static void __pass_event(struct evdev_client *client,
 	client->head &= client->bufsize - 1;
 
 	if (unlikely(client->head == client->tail)) {
+printk("SYN_DROPPED in __pass_event due to event type=%d code=%d value=%d\n", (int)event->type, (int)event->code, (int)event->value);
 		/*
 		 * This effectively "drops" all unconsumed events, leaving
 		 * EV_SYN/SYN_DROPPED plus the newest event in the queue.
