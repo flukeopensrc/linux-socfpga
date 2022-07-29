@@ -134,14 +134,6 @@ static void input_pass_values(struct input_dev *dev,
 	if (!count)
 		return;
 
-	if (test_bit(EV_KEY, dev->evbit)) {
-		for (v = vals; v != vals + count; v++) {
-			if (v->type == EV_KEY && v->value == 0) {
-				printk("rls %i\n", (int)v->code);
-			}
-		}
-	}
-
 	rcu_read_lock();
 
 	handle = rcu_dereference(dev->grab);
