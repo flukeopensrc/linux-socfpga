@@ -273,7 +273,7 @@ static void hid_irq_in(struct urb *urb)
 	struct hid_device	*hid = urb->context;
 	struct usbhid_device	*usbhid = hid->driver_data;
 	int			status;
-
+int i;
 	printk("urb status %i\n", (int)urb->status);
 	
 	switch (urb->status) {
