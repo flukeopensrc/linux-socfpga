@@ -273,11 +273,17 @@ static void hid_irq_in(struct urb *urb)
 	struct hid_device	*hid = urb->context;
 	struct usbhid_device	*usbhid = hid->driver_data;
 	int			status;
-if (urb->status)
-	printk("nonzero urb status %i\n", (int)urb->status);
 
+	printk("urb status %i\n", (int)urb->status);
+	
 	switch (urb->status) {
 	case 0:			/* success */
+		printk("xfer: ");
+		for (i = 0; i < urb->actual_length; ++i)
+		{
+			printk("%x ", (int)urb->transfer_buffer[i]);
+		}
+		printk("\n");
 		usbhid->retry_delay = 0;
 		if (!test_bit(HID_OPENED, &usbhid->iofl))
 			break;
@@ -1429,6 +1435,7 @@ static void hid_cancel_delayed_stuff(struct usbhid_device *usbhid)
 
 static void hid_cease_io(struct usbhid_device *usbhid)
 {
+printk("hid_cease_io\n");
 	del_timer_sync(&usbhid->io_retry);
 	usb_kill_urb(usbhid->urbin);
 	usb_kill_urb(usbhid->urbctrl);
@@ -1440,7 +1447,7 @@ static void hid_restart_io(struct hid_device *hid)
 	struct usbhid_device *usbhid = hid->driver_data;
 	int clear_halt = test_bit(HID_CLEAR_HALT, &usbhid->iofl);
 	int reset_pending = test_bit(HID_RESET_PENDING, &usbhid->iofl);
-
+printk("hid_restart_io\n");
 	spin_lock_irq(&usbhid->lock);
 	clear_bit(HID_SUSPENDED, &usbhid->iofl);
 	usbhid_mark_busy(usbhid);
