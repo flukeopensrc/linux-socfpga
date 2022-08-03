@@ -1002,9 +1002,8 @@ static void dwc2_hc_xfercomp_intr(struct dwc2_hsotg *hsotg,
 		dev_vdbg(hsotg->dev,
 			 "--Host Channel %d Interrupt: Transfer Complete--\n",
 			 chnum);
-dev_info(hsotg->dev,
-			 "--Host Channel %d Interrupt: Transfer Complete--\n",
-			 chnum);
+if(printk_ratelimit())
+	printk( "TC\n");
 
 	if (!urb)
 		goto handle_xfercomp_done;
