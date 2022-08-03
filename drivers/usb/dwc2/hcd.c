@@ -696,7 +696,7 @@ static void dwc2_hc_init(struct dwc2_hsotg *hsotg, struct dwc2_host_chan *chan)
 	if (dbg_hc(chan))
 		dev_vdbg(hsotg->dev, "%s()\n", __func__);
 
-if(chan->ep_type == USB_ENDPOINT_XFER_INT) 
+if(chan->ep_type == USB_ENDPOINT_XFER_INT && printk_ratelimit()) 
 {
 	printk("dwc2_hc_init intr urb\n");
 }
