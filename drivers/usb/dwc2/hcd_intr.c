@@ -187,7 +187,7 @@ static void dwc2_rx_fifo_level_intr(struct dwc2_hsotg *hsotg)
 {
 	u32 grxsts, chnum, bcnt, dpid, pktsts;
 	struct dwc2_host_chan *chan;
-
+	
 	if (dbg_perio())
 		dev_vdbg(hsotg->dev, "--RxFIFO Level Interrupt--\n");
 
@@ -211,7 +211,7 @@ static void dwc2_rx_fifo_level_intr(struct dwc2_hsotg *hsotg)
 			 chan->data_pid_start);
 		dev_vdbg(hsotg->dev, "    PStatus = %d\n", pktsts);
 	}
-
+printk("rxl: ");
 	switch (pktsts) {
 	case GRXSTS_PKTSTS_HCHIN:
 		/* Read the data into the host buffer */

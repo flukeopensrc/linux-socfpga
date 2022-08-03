@@ -420,7 +420,10 @@ void dwc2_read_packet(struct dwc2_hsotg *hsotg, u8 *dest, u16 bytes)
 	dev_vdbg(hsotg->dev, "%s(%p,%p,%d)\n", __func__, hsotg, dest, bytes);
 
 	for (i = 0; i < word_count; i++, data_buf++)
+	{
 		*data_buf = dwc2_readl(hsotg, HCFIFO(0));
+		printk(KERN_CONT "%x", (unsigned)*data_buf);
+	}
 }
 
 /**
