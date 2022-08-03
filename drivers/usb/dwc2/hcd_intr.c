@@ -66,11 +66,13 @@ static void dwc2_track_missed_sofs(struct dwc2_hsotg *hsotg)
 	u16 expected = dwc2_frame_num_inc(hsotg->last_frame_num, 1);
 
 	if (expected != curr_frame_number)
+	{
 		dwc2_sch_vdbg(hsotg, "MISSED SOF %04x != %04x\n",
 			      expected, curr_frame_number);
-printk("MISSED SOF %04x != %04x\n",
-			      expected, curr_frame_number);
-
+		if (printk_ratelimit())
+			printk("MISSED SOF %04x != %04x\n", expected, curr_frame_number);
+	}
+	
 #ifdef CONFIG_USB_DWC2_TRACK_MISSED_SOFS
 	if (hsotg->frame_num_idx < FRAME_NUM_ARRAY_SIZE) {
 		if (expected != curr_frame_number) {
