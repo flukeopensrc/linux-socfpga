@@ -1764,7 +1764,7 @@ static void dwc2_hc_datatglerr_intr(struct dwc2_hsotg *hsotg,
 	dev_dbg(hsotg->dev,
 		"--Host Channel %d Interrupt: Data Toggle Error--\n", chnum);
 if (printk_ratelimit())
-    printk("--Host Channel %d Interrupt: Data Toggle Error--\n", chnum););
+    printk("--Host Channel %d Interrupt: Data Toggle Error--\n", chnum);
 
 	if (chan->ep_is_in)
 		qtd->error_count = 0;
