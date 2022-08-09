@@ -724,6 +724,7 @@ static void dwc2_release_channel(struct dwc2_hsotg *hsotg,
 	if (dbg_hc(chan))
 		dev_vdbg(hsotg->dev, "  %s: channel %d, halt_status %d\n",
 			 __func__, chan->hc_num, halt_status);
+if (chan->ep_type == USB_ENDPOINT_XFER_INT && printk_ratelimit()) printk("release ch %d\n", chan->hc_num);
 
 	switch (halt_status) {
 	case DWC2_HC_XFER_URB_COMPLETE:
@@ -1091,10 +1092,10 @@ static void dwc2_hc_xfercomp_intr(struct dwc2_hsotg *hsotg,
 		break;
 	case USB_ENDPOINT_XFER_INT:
 		dev_vdbg(hsotg->dev, "  Interrupt transfer complete\n");
-if(printk_ratelimit())
-	printk( "ITC\n");
 		urb_xfer_done = dwc2_update_urb_state(hsotg, chan, chnum, urb,
 						      qtd);
+if(printk_ratelimit())
+	printk( "ITC %d\n", urb_xfer_done);
 
 		/*
 		 * Interrupt URB is done on the first transfer complete

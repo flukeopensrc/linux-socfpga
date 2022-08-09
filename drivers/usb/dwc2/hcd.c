@@ -2711,6 +2711,10 @@ static int dwc2_assign_and_init_hc(struct dwc2_hsotg *hsotg, struct dwc2_qh *qh)
 	dwc2_hc_init(hsotg, chan);
 	chan->qh = qh;
 
+    if (chan->ep_type == USB_ENDPOINT_XFER_INT && printk_ratelimit())
+    {
+        printk("assigned chan %d\n", (int)chan->hc_num);
+    }
 	return 0;
 }
 
