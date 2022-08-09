@@ -66,11 +66,11 @@ static void dwc2_track_missed_sofs(struct dwc2_hsotg *hsotg)
 	u16 expected = dwc2_frame_num_inc(hsotg->last_frame_num, 1);
 	static int dropped_frame_count = 0, frame_count = 0;
 	
-	frame_count += (curr_frame_number - hsotg->last_frame_num) % 0x400;
+	frame_count += (curr_frame_number - hsotg->last_frame_num) % 0x4000;
 	dropped_frame_count += curr_frame_number - expected;
 	if (frame_count > 10000)
 	{
-		printk("dropped %d/%d\n", dropped_frame_count, frame_count);
+		printk("frame %d, dropped %d/%d\n", (int)curr_frame_number, dropped_frame_count, frame_count);
 		dropped_frame_count = frame_count = 0;
 	}
 	
