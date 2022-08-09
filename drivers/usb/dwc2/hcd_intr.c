@@ -64,9 +64,9 @@ static void dwc2_track_missed_sofs(struct dwc2_hsotg *hsotg)
 {
 	u16 curr_frame_number = hsotg->frame_number;
 	u16 expected = dwc2_frame_num_inc(hsotg->last_frame_num, 1);
-	static unsigned dropped_frame_count = 0, frame_count = 0;
+	static int dropped_frame_count = 0, frame_count = 0;
 	
-	frame_count += curr_frame_number - hsotg->last_frame_num;
+	frame_count += (curr_frame_number - hsotg->last_frame_num) % 0x400;
 	dropped_frame_count += curr_frame_number - expected;
 	if (frame_count > 10000)
 	{
@@ -1009,8 +1009,6 @@ static void dwc2_hc_xfercomp_intr(struct dwc2_hsotg *hsotg,
 		dev_vdbg(hsotg->dev,
 			 "--Host Channel %d Interrupt: Transfer Complete--\n",
 			 chnum);
-if(printk_ratelimit())
-	printk( "TC\n");
 
 	if (!urb)
 		goto handle_xfercomp_done;
@@ -1093,6 +1091,8 @@ if(printk_ratelimit())
 		break;
 	case USB_ENDPOINT_XFER_INT:
 		dev_vdbg(hsotg->dev, "  Interrupt transfer complete\n");
+if(printk_ratelimit())
+	printk( "ITC\n");
 		urb_xfer_done = dwc2_update_urb_state(hsotg, chan, chnum, urb,
 						      qtd);
 
@@ -1573,6 +1573,8 @@ static void dwc2_hc_ahberr_intr(struct dwc2_hsotg *hsotg,
 
 	dev_dbg(hsotg->dev, "--Host Channel %d Interrupt: AHB Error--\n",
 		chnum);
+if (printk_ratelimit())
+    printk("--Host Channel %d Interrupt: AHB Error--\n", chnum);
 
 	if (!urb)
 		goto handle_ahberr_halt;
@@ -1761,6 +1763,8 @@ static void dwc2_hc_datatglerr_intr(struct dwc2_hsotg *hsotg,
 {
 	dev_dbg(hsotg->dev,
 		"--Host Channel %d Interrupt: Data Toggle Error--\n", chnum);
+if (printk_ratelimit())
+    printk("--Host Channel %d Interrupt: Data Toggle Error--\n", chnum););
 
 	if (chan->ep_is_in)
 		qtd->error_count = 0;

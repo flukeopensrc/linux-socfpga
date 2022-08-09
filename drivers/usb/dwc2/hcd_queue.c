@@ -1298,7 +1298,7 @@ static void dwc2_unreserve_timer_fn(struct timer_list *t)
 		if (timer_pending(&qh->unreserve_timer))
 			return;
 	}
-
+printk("dwc2_unreserve_timer_fn\n");
 	/*
 	 * Might be no more unreserve pending if:
 	 * - We started executing but didn't get the lock yet.
