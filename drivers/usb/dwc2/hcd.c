@@ -692,17 +692,9 @@ static void dwc2_hc_init(struct dwc2_hsotg *hsotg, struct dwc2_host_chan *chan)
 	u32 hcintmsk;
 	u32 hcchar;
 	u32 hcsplt = 0;
-	static unsigned call_count = 0;
 	
 	if (dbg_hc(chan))
 		dev_vdbg(hsotg->dev, "%s()\n", __func__);
-
-if(chan->ep_type == USB_ENDPOINT_XFER_INT) 
-{
-	++call_count;
-	if(call_count % 10000 == 0)
-		printk("dwc2_hc_init %d\n", call_count);
-}
 
 	/* Clear old interrupt conditions for this host channel */
 	hcintmsk = 0xffffffff;
