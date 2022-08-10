@@ -2054,9 +2054,42 @@ static void dwc2_hc_n_intr(struct dwc2_hsotg *hsotg, int chnum)
 	struct dwc2_qtd *qtd;
 	struct dwc2_host_chan *chan;
 	u32 hcint, hcintmsk;
+	u32 hctsiz, count, length;
 
 	chan = hsotg->hc_ptr_array[chnum];
 
+	hctsiz = dwc2_readl(hsotg, HCTSIZ(chnum));
+
+// 	if (halt_status == DWC2_HC_XFER_COMPLETE) {
+// 		if (chan->ep_is_in) {
+// 			count = (hctsiz & TSIZ_XFERSIZE_MASK) >>
+// 				TSIZ_XFERSIZE_SHIFT;
+// 			length = chan->xfer_len - count;
+// 			if (short_read)
+// 				*short_read = (count != 0);
+// 		} else if (chan->qh->do_split) {
+// 			length = qtd->ssplit_out_xfer_count;
+// 		} else {
+// 			length = chan->xfer_len;
+// 		}
+// 	} else 
+		/*
+		 * Must use the hctsiz.pktcnt field to determine how much data
+		 * has been transferred. This field reflects the number of
+		 * packets that have been transferred via the USB. This is
+		 * always an integral number of packets if the transfer was
+		 * halted before its normal completion. (Can't use the
+		 * hctsiz.xfersize field because that reflects the number of
+		 * bytes transferred via the AHB, not the USB).
+		 */
+		count = (hctsiz & TSIZ_PKTCNT_MASK) >> TSIZ_PKTCNT_SHIFT;
+		length = (chan->start_pkt_count - count) * chan->max_packet;
+	if (length > 0)
+	{
+		if (printk_ratelimit()) printk("chan %d len %d\n", (int)chnum, (int)length);
+	}
+
+	
 	hcint = dwc2_readl(hsotg, HCINT(chnum));
 	hcintmsk = dwc2_readl(hsotg, HCINTMSK(chnum));
 	if (!chan) {
