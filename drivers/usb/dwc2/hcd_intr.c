@@ -1851,10 +1851,6 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 		dev_vdbg(hsotg->dev,
 			 "--Host Channel %d Interrupt: DMA Channel Halted--\n",
 			 chnum);
-if (printk_ratelimit())
-	printk(
-			"--Host Channel %d Interrupt: DMA Channel Halted--\n",
-			chnum);
 
 	/*
 	 * For core with OUT NAK enhancement, the flow for high-speed
@@ -1939,7 +1935,6 @@ if (printk_ratelimit())
 			 * OUT that started with a PING. The nyet takes
 			 * precedence.
 			 */
-if (printk_ratelimit()) printk("dwc2: nyet");
 			dwc2_hc_nyet_intr(hsotg, chan, chnum, qtd);
 		} else if ((chan->hcint & HCINTMSK_NAK) &&
 			   !(hcintmsk & HCINTMSK_NAK)) {
@@ -1950,7 +1945,6 @@ if (printk_ratelimit()) printk("dwc2: nyet");
 			 * Handle nak here for BULK/CONTROL OUT transfers, which
 			 * halt on a NAK to allow rewinding the buffer pointer.
 			 */
-if (printk_ratelimit()) printk("dwc2: nak");
 			dwc2_hc_nak_intr(hsotg, chan, chnum, qtd);
 		} else if ((chan->hcint & HCINTMSK_ACK) &&
 			   !(hcintmsk & HCINTMSK_ACK)) {
@@ -1961,7 +1955,6 @@ if (printk_ratelimit()) printk("dwc2: nak");
 			 * Handle ack here for split transfers. Start splits
 			 * halt on ACK.
 			 */
-if (printk_ratelimit()) printk("dwc2: ack");
 			dwc2_hc_ack_intr(hsotg, chan, chnum, qtd);
 		} else {
 			if (chan->ep_type == USB_ENDPOINT_XFER_INT ||
