@@ -1131,6 +1131,8 @@ static void dwc2_hc_stall_intr(struct dwc2_hsotg *hsotg,
 
 	dev_dbg(hsotg->dev, "--Host Channel %d Interrupt: STALL Received--\n",
 		chnum);
+	if(printk_ratelimit()) printk( "--Host Channel %d Interrupt: STALL Received--\n",
+		chnum);
 
 	if (hsotg->params.dma_desc_enable) {
 		dwc2_hcd_complete_xfer_ddma(hsotg, chan, chnum,
@@ -1664,6 +1666,8 @@ static void dwc2_hc_xacterr_intr(struct dwc2_hsotg *hsotg,
 				 struct dwc2_qtd *qtd)
 {
 	dev_dbg(hsotg->dev,
+		"--Host Channel %d Interrupt: Transaction Error--\n", chnum);
+if(printk_ratelimit()) printk(
 		"--Host Channel %d Interrupt: Transaction Error--\n", chnum);
 
 	dwc2_hc_handle_tt_clear(hsotg, chan, qtd);
