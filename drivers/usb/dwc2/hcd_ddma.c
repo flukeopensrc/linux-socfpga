@@ -1304,7 +1304,7 @@ void dwc2_hcd_complete_xfer_ddma(struct dwc2_hsotg *hsotg,
 	int continue_isoc_xfer = 0;
 	enum dwc2_transaction_type tr_type;
 
-if (printk_ratelimit()) printk("dwc2_hcd_complete_xfer_ddma\n);
+if (printk_ratelimit()) printk("dwc2_hcd_complete_xfer_ddma\n");
 
 	if (chan->ep_type == USB_ENDPOINT_XFER_ISOC) {
 		dwc2_complete_isoc_xfer_ddma(hsotg, chan, halt_status);
