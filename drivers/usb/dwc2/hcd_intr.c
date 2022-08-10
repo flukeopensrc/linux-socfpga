@@ -724,7 +724,6 @@ static void dwc2_release_channel(struct dwc2_hsotg *hsotg,
 	if (dbg_hc(chan))
 		dev_vdbg(hsotg->dev, "  %s: channel %d, halt_status %d\n",
 			 __func__, chan->hc_num, halt_status);
-if (chan->ep_type == USB_ENDPOINT_XFER_INT && printk_ratelimit()) printk("release ch %d\n", chan->hc_num);
 
 	switch (halt_status) {
 	case DWC2_HC_XFER_URB_COMPLETE:
