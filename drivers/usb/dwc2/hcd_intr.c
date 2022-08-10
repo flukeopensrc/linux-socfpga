@@ -2262,6 +2262,9 @@ irqreturn_t dwc2_handle_hcd_intr(struct dwc2_hsotg *hsotg)
 				 "DWC OTG HCD Interrupt Detected gintsts&gintmsk=0x%08x\n",
 				 gintsts);
 
+// try doing channel interrupts before sof interrupt
+ 		if (gintsts & GINTSTS_HCHINT)
+ 			dwc2_hc_intr(hsotg);
 		if (gintsts & GINTSTS_SOF)
 			dwc2_sof_intr(hsotg);
 		if (gintsts & GINTSTS_RXFLVL)
@@ -2270,8 +2273,9 @@ irqreturn_t dwc2_handle_hcd_intr(struct dwc2_hsotg *hsotg)
 			dwc2_np_tx_fifo_empty_intr(hsotg);
 		if (gintsts & GINTSTS_PRTINT)
 			dwc2_port_intr(hsotg);
-		if (gintsts & GINTSTS_HCHINT)
-			dwc2_hc_intr(hsotg);
+//XXX
+// 		if (gintsts & GINTSTS_HCHINT)
+// 			dwc2_hc_intr(hsotg);
 		if (gintsts & GINTSTS_PTXFEMP)
 			dwc2_perio_tx_fifo_empty_intr(hsotg);
 
