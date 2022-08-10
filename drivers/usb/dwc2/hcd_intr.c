@@ -1523,6 +1523,8 @@ static void dwc2_hc_babble_intr(struct dwc2_hsotg *hsotg,
 {
 	dev_dbg(hsotg->dev, "--Host Channel %d Interrupt: Babble Error--\n",
 		chnum);
+if(printk_ratelimit()) printk("--Host Channel %d Interrupt: Babble Error--\n",
+		chnum);
 
 	dwc2_hc_handle_tt_clear(hsotg, chan, qtd);
 
@@ -1724,6 +1726,9 @@ static void dwc2_hc_frmovrun_intr(struct dwc2_hsotg *hsotg,
 	if (dbg_hc(chan))
 		dev_dbg(hsotg->dev, "--Host Channel %d Interrupt: Frame Overrun--\n",
 			chnum);
+	if (printk_ratelimit())
+		printk( "--Host Channel %d Interrupt: Frame Overrun--\n",
+			chnum);
 
 	dwc2_hc_handle_tt_clear(hsotg, chan, qtd);
 
@@ -1846,6 +1851,10 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 		dev_vdbg(hsotg->dev,
 			 "--Host Channel %d Interrupt: DMA Channel Halted--\n",
 			 chnum);
+if (printk_ratelimit())
+	printk(
+			"--Host Channel %d Interrupt: DMA Channel Halted--\n",
+			chnum);
 
 	/*
 	 * For core with OUT NAK enhancement, the flow for high-speed
@@ -1930,6 +1939,7 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 			 * OUT that started with a PING. The nyet takes
 			 * precedence.
 			 */
+if (printk_ratelimit()) printk("dwc2: nyet");
 			dwc2_hc_nyet_intr(hsotg, chan, chnum, qtd);
 		} else if ((chan->hcint & HCINTMSK_NAK) &&
 			   !(hcintmsk & HCINTMSK_NAK)) {
@@ -1940,6 +1950,7 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 			 * Handle nak here for BULK/CONTROL OUT transfers, which
 			 * halt on a NAK to allow rewinding the buffer pointer.
 			 */
+if (printk_ratelimit()) printk("dwc2: nak");
 			dwc2_hc_nak_intr(hsotg, chan, chnum, qtd);
 		} else if ((chan->hcint & HCINTMSK_ACK) &&
 			   !(hcintmsk & HCINTMSK_ACK)) {
@@ -1950,6 +1961,7 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 			 * Handle ack here for split transfers. Start splits
 			 * halt on ACK.
 			 */
+if (printk_ratelimit()) printk("dwc2: ack");
 			dwc2_hc_ack_intr(hsotg, chan, chnum, qtd);
 		} else {
 			if (chan->ep_type == USB_ENDPOINT_XFER_INT ||
@@ -1961,6 +1973,9 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 				 * in its scheduled (micro)frame.
 				 */
 				dev_dbg(hsotg->dev,
+					"%s: Halt channel %d (assume incomplete periodic transfer)\n",
+					__func__, chnum);
+				if(printk_ratelimit()) dev_warn(hsotg->dev,
 					"%s: Halt channel %d (assume incomplete periodic transfer)\n",
 					__func__, chnum);
 				dwc2_halt_channel(hsotg, chan, qtd,
