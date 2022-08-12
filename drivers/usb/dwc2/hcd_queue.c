@@ -2057,7 +2057,9 @@ void dwc2_hcd_qtd_init(struct dwc2_qtd *qtd, struct dwc2_hcd_urb *urb)
 	qtd->isoc_split_pos = DWC2_HCSPLT_XACTPOS_ALL;
 	qtd->isoc_split_offset = 0;
 	qtd->in_process = 0;
-
+    qtd->num_naks = 0;
+    qtd->num_nyets = 0;
+    
 	/* Store the qtd ptr in the urb to reference the QTD */
 	urb->qtd = qtd;
 }
