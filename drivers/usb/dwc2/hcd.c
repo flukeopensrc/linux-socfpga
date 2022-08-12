@@ -1259,7 +1259,7 @@ if (chan->do_split && chan->ep_type == USB_ENDPOINT_XFER_INT)
 {
 	if (chan->complete_split)
 	{
-		if (((hsotg->frame_number - chan->ssplit_frame_index) & 0x3fff) > 2 
+		if (((hsotg->frame_number - chan->ssplit_frame_index) & 0x3fff) > 8 
 			&& printk_ratelimit()) printk("ssplit frame submit %d ack %d\n", (int)chan->ssplit_frame_index, (int)hsotg->frame_number);
 	}else
 	{
