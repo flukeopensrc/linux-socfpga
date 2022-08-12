@@ -164,6 +164,7 @@ struct dwc2_host_chan {
 	dma_addr_t desc_list_addr;
 	u32 desc_list_sz;
 	struct list_head split_order_list_entry;
+    u16 ssplit_frame_index;
 };
 
 struct dwc2_hcd_pipe_info {

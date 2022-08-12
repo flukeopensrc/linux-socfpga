@@ -1478,7 +1478,7 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 				past_end = dwc2_frame_num_le(
 					end_frnum, qh->next_active_frame);
 			}
-if (printk_ratelimit()) printk("nyet csplit nyets=%d\n", (int)qtd->num_nyets);
+// if (printk_ratelimit()) printk("nyet csplit nyets=%d\n", (int)qtd->num_nyets);
 
 			if (qtd->num_nyets >= 3 /*past_end*/) {
 				/* Treat this as a transaction error. */
