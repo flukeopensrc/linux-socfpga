@@ -1404,16 +1404,12 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 	if (dbg_hc(chan))
 		dev_vdbg(hsotg->dev, "--Host Channel %d Interrupt: NYET Received--\n",
 			 chnum);
-if (printk_ratelimit())
-	printk("--Host Channel %d Interrupt: NYET Received--\n",
-			 chnum);
 
 	/*
 	 * NYET on CSPLIT
 	 * re-do the CSPLIT immediately on non-periodic
 	 */
 	if (chan->do_split && chan->complete_split) {
-if (printk_ratelimit()) printk("nyet csplit");
 		if (chan->ep_is_in && chan->ep_type == USB_ENDPOINT_XFER_ISOC &&
 		    hsotg->params.host_dma) {
 			qtd->complete_split = 0;
@@ -1479,10 +1475,11 @@ if (printk_ratelimit()) printk("nyet csplit");
 				past_end = dwc2_frame_num_le(
 					end_frnum, qh->next_active_frame);
 			}
+if (printk_ratelimit()) printk("nyet csplit pe=%d\n", (int)past_end);
 
 			if (past_end) {
 				/* Treat this as a transaction error. */
-#if 0
+//#if 0
 				/*
 				 * Todo: Fix system performance so this can
 				 * be treated as an error. Right now complete
@@ -1491,7 +1488,7 @@ if (printk_ratelimit()) printk("nyet csplit");
 				 * occurs regularly in Slave mode.
 				 */
 				qtd->error_count++;
-#endif
+//#endif
 				qtd->complete_split = 0;
 				dwc2_halt_channel(hsotg, chan, qtd,
 						  DWC2_HC_XFER_XACT_ERR);
