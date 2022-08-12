@@ -1336,6 +1336,7 @@ static void dwc2_hc_ack_intr(struct dwc2_hsotg *hsotg,
 
 		if (chan->ep_type != USB_ENDPOINT_XFER_ISOC || chan->ep_is_in) {
 			qtd->complete_split = 1;
+			qtd->num_nyets = 0;
 			dwc2_halt_channel(hsotg, chan, qtd, DWC2_HC_XFER_ACK);
 		} else {
 			/* ISOC OUT */
@@ -1491,7 +1492,6 @@ if (printk_ratelimit()) printk("nyet csplit nyets=%d\n", (int)qtd->num_nyets);
 				 */
 				qtd->error_count++;
 //#endif
-				qtd->num_nyets = 0;
 				qtd->complete_split = 0;
 				dwc2_halt_channel(hsotg, chan, qtd,
 						  DWC2_HC_XFER_XACT_ERR);
