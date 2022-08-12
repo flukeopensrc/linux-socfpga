@@ -1180,6 +1180,8 @@ static void dwc2_update_urb_state_abn(struct dwc2_hsotg *hsotg,
 				      struct dwc2_qtd *qtd,
 				      enum dwc2_halt_status halt_status)
 {
+if (printk_ratelimit()) printk("dwc2_update_urb_state_abn\n");
+
 	u32 xfer_length = dwc2_get_actual_xfer_length(hsotg, chan, chnum,
 						      qtd, halt_status, NULL);
 	u32 hctsiz;
@@ -1402,12 +1404,16 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 	if (dbg_hc(chan))
 		dev_vdbg(hsotg->dev, "--Host Channel %d Interrupt: NYET Received--\n",
 			 chnum);
+if (printk_ratelimit())
+	printk("--Host Channel %d Interrupt: NYET Received--\n",
+			 chnum);
 
 	/*
 	 * NYET on CSPLIT
 	 * re-do the CSPLIT immediately on non-periodic
 	 */
 	if (chan->do_split && chan->complete_split) {
+if (printk_ratelimit()) printk("nyet csplit");
 		if (chan->ep_is_in && chan->ep_type == USB_ENDPOINT_XFER_ISOC &&
 		    hsotg->params.host_dma) {
 			qtd->complete_split = 0;
@@ -1995,6 +2001,7 @@ static void dwc2_hc_chhltd_intr_dma(struct dwc2_hsotg *hsotg,
 error:
 		/* Failthrough: use 3-strikes rule */
 		qtd->error_count++;
+if (printk_ratelimit()) printk("err count %d\n", qtd->error_count);
 		dwc2_update_urb_state_abn(hsotg, chan, chnum, qtd->urb,
 					  qtd, DWC2_HC_XFER_XACT_ERR);
 		dwc2_hcd_save_data_toggle(hsotg, chan, chnum, qtd);
@@ -2086,7 +2093,7 @@ static void dwc2_hc_n_intr(struct dwc2_hsotg *hsotg, int chnum)
 		length = (chan->start_pkt_count - count) * chan->max_packet;
 	if (length > 0)
 	{
-		if (printk_ratelimit()) printk("chan %d len %d\n", (int)chnum, (int)length);
+		if (printk_ratelimit()) printk("chan %d len %d packets %d\n", (int)chnum, (int)length, (int)count);
 	}
 
 	
