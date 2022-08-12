@@ -1405,6 +1405,8 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 		dev_vdbg(hsotg->dev, "--Host Channel %d Interrupt: NYET Received--\n",
 			 chnum);
 
+	++qtd->num_nyets;
+	
 	/*
 	 * NYET on CSPLIT
 	 * re-do the CSPLIT immediately on non-periodic
@@ -1475,9 +1477,9 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 				past_end = dwc2_frame_num_le(
 					end_frnum, qh->next_active_frame);
 			}
-if (printk_ratelimit()) printk("nyet csplit pe=%d\n", (int)past_end);
+if (printk_ratelimit()) printk("nyet csplit nyets=%d\n", (int)qtd->num_nyets);
 
-			if (past_end) {
+			if (qtd->num_nyets >= 3 /*past_end*/) {
 				/* Treat this as a transaction error. */
 //#if 0
 				/*

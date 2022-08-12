@@ -443,6 +443,7 @@ struct dwc2_qtd {
 	u8 n_desc;
 	u16 isoc_frame_index_last;
 	u16 num_naks;
+	u16 num_nyets;
 	struct dwc2_hcd_urb *urb;
 	struct dwc2_qh *qh;
 	struct list_head qtd_list_entry;
