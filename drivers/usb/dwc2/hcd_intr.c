@@ -1491,6 +1491,7 @@ if (printk_ratelimit()) printk("nyet csplit nyets=%d\n", (int)qtd->num_nyets);
 				 */
 				qtd->error_count++;
 //#endif
+				qtd->num_nyets = 0;
 				qtd->complete_split = 0;
 				dwc2_halt_channel(hsotg, chan, qtd,
 						  DWC2_HC_XFER_XACT_ERR);
