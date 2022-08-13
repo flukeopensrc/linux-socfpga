@@ -1255,18 +1255,6 @@ static void dwc2_hc_start_transfer(struct dwc2_hsotg *hsotg,
 		hctsiz |= TSIZ_DOPNG;
 	}
 
-if (chan->do_split && chan->ep_type == USB_ENDPOINT_XFER_INT)
-{
-	if (chan->complete_split)
-	{
-		if (((hsotg->frame_number - chan->ssplit_frame_index) & 0x3fff) > 8 
-			&& printk_ratelimit()) printk("ssplit frame submit %d ack %d\n", (int)chan->ssplit_frame_index, (int)hsotg->frame_number);
-	}else
-	{
-		chan->ssplit_frame_index = hsotg->frame_number;
-	}
-}
-
 	if (chan->do_split) {
 		if (dbg_hc(chan))
 			dev_vdbg(hsotg->dev, "split\n");
@@ -4176,7 +4164,7 @@ void dwc2_host_complete(struct dwc2_hsotg *hsotg, struct dwc2_qtd *qtd,
 	urb->hcpriv = NULL;
 	kfree(qtd->urb);
 	qtd->urb = NULL;
-
+if (urb->status && printk_ratelimit()) printk("urb status %d\n", urb->status);
 	usb_hcd_giveback_urb(dwc2_hsotg_to_hcd(hsotg), urb, status);
 }
 
