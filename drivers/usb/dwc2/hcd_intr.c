@@ -1482,7 +1482,7 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 
 			if (qtd->num_nyets >= 3 /*past_end*/) {
 				/* Treat this as a transaction error. */
-//#if 0
+#if 0
 				/*
 				 * Todo: Fix system performance so this can
 				 * be treated as an error. Right now complete
@@ -1491,7 +1491,8 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 				 * occurs regularly in Slave mode.
 				 */
 				qtd->error_count++;
-//#endif
+#endif
+qtd->error_count += qtd->num_nyets;
 				qtd->complete_split = 0;
 				dwc2_halt_channel(hsotg, chan, qtd,
 						  DWC2_HC_XFER_XACT_ERR);
