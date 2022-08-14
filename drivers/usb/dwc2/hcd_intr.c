@@ -1492,7 +1492,13 @@ static void dwc2_hc_nyet_intr(struct dwc2_hsotg *hsotg,
 				 */
 				qtd->error_count++;
 #endif
-qtd->error_count += qtd->num_nyets;
+				/* Force an error by jacking up the error_count if we missed our window for the complete splits.  At
+				 * this point, the transaction translator on the hub has already discarded
+				 * the result and there is no way to recover.  Forcing an error allows the usb hid-generic driver
+				 * to resync with the state of our usb keyboard after a missed interrupt transaction.
+				 * Frank Mori Hess fmh6jj@gmail.com
+				 */
+				qtd->error_count += 3;
 				qtd->complete_split = 0;
 				dwc2_halt_channel(hsotg, chan, qtd,
 						  DWC2_HC_XFER_XACT_ERR);

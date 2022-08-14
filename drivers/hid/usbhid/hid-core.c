@@ -125,6 +125,13 @@ static void hid_reset(struct work_struct *work)
 		rc = usb_clear_halt(hid_to_usb_dev(hid), usbhid->urbin->pipe);
 		clear_bit(HID_CLEAR_HALT, &usbhid->iofl);
 		if (rc == 0) {
+			/* Query the state of the hid device to get back in sync, since we may have lost interrupt in urbs. 
+			 * Frank Hess fmh6jj@gmail.com 
+			 */
+			if ((hid->quirks & HID_QUIRK_NO_INIT_REPORTS) == 0);
+			{
+				usbhid_init_reports(hid);
+			}
 			hid_start_in(hid);
 		} else {
 			dev_dbg(&usbhid->intf->dev,
