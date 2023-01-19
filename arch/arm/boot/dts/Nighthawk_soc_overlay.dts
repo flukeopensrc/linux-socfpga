@@ -92,7 +92,7 @@
             Nighthawk_FPGA_IO_led_pio: gpioLED@0x100049180 {
                 compatible = "flk,fgpio-1.0";
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
-                serial-number = "00000000A0000001";
+                /* serial-number = "00000000A0000001"; */
                 reg = < 0x00049180 0x00000020 >;
                 clocks = < &h2f_user0_clk >;
                 altr,ngpio = <1>;
