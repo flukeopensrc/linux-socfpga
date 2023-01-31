@@ -69,7 +69,7 @@
                 dmas = < &pdma 0 >;
             }; //end gpib@0x100049800 (Nighthawk_FPGA_IO_fmh_gpib_0)
 
-            Nighthawk_FPGA_IO_Port_A: gpio@0x100049a00 {
+            Nighthawk_FPGA_IO_Port_A: gpio_A@0x100049a00 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
