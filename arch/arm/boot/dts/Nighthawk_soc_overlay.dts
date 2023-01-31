@@ -69,7 +69,7 @@
                 dmas = < &pdma 0 >;
             }; //end gpib@0x100049800 (Nighthawk_FPGA_IO_fmh_gpib_0)
 
-            Nighthawk_FPGA_IO_Port_A: gpio_pa@100049a00 {
+            Nighthawk_FPGA_IO_Port_A: gpio@0x100049a00 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
@@ -89,7 +89,7 @@
                 flk,interrupt_type = < 1 >;	/* appended from boardinfo */
             }; //end gpio@0x100049a00 (Nighthawk_FPGA_IO_Port_A)
 
-            Nighthawk_FPGA_IO_led_pio: gpio_led@100049180 {
+            Nighthawk_FPGA_IO_led_pio: gpio@0x100049180 {
                 compatible = "flk,fgpio-1.0";
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 serial-number = "00000000A0000001";
@@ -104,7 +104,7 @@
                 bidirbits = < 0x00000000 >;	/* appended from boardinfo */
             }; //end gpio@0x100049180 (Nighthawk_FPGA_IO_led_pio)
 
-            Nighthawk_FPGA_IO_LCD_PWM_DAC: gpio_pwm_dac@100049cc0 {
+            Nighthawk_FPGA_IO_LCD_PWM_DAC: gpio@0x100049cc0 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049cc0 0x00000020 >;
@@ -124,7 +124,7 @@
                 clocks = < &h2f_user0_clk >;
             }; //end unknown@0x100049b00 (Nighthawk_FPGA_IO_Beeper_Counter)
 
-            Nighthawk_FPGA_IO_Beeper_Enable: gpio_beeper@100049b40 {
+            Nighthawk_FPGA_IO_Beeper_Enable: gpio@0x100049b40 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049b40 0x00000020 >;
@@ -138,7 +138,7 @@
                 bidirbits = < 0x00000000 >;	/* appended from boardinfo */
             }; //end gpio@0x100049b40 (Nighthawk_FPGA_IO_Beeper_Enable)
 
-            Nighthawk_FPGA_IO_LCD_PWM_FREQ: gpio_pwm_freq@100049ec0 {
+            Nighthawk_FPGA_IO_LCD_PWM_FREQ: gpio@0x100049ec0 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049ec0 0x00000020 >;
@@ -152,7 +152,7 @@
                 bidirbits = <0x00000000>;	/* appended from boardinfo */
             }; //end gpio@0x100049ec0 (Nighthawk_FPGA_IO_LCD_PWM_FREQ)
 
-            Nighthawk_FPGA_IO_Knob_PIO: gpio_knob@100049f40 {
+            Nighthawk_FPGA_IO_Knob_PIO: gpio@0x100049f40 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049f40 0x00000010 >;
@@ -172,7 +172,7 @@
                 flk,interrupt_type = < 1 >;	/* appended from boardinfo */
             }; //end gpio@0x100049f40 (Nighthawk_FPGA_IO_Knob_PIO)
 
-            Nighthawk_FPGA_IO_MSP_PIO: gpio_msp_pio@10004a400 {
+            Nighthawk_FPGA_IO_MSP_PIO: gpio@0x10004a400 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004a400 0x00000020 >;
@@ -186,7 +186,7 @@
                 bidirbits = < 0x00000000 >;	/* appended from boardinfo */
             }; //end gpio@0x10004a400 (Nighthawk_FPGA_IO_MSP_PIO)
 
-            Nighthawk_FPGA_IO_gpib_disable: gpio_disable@10004a440 {
+            Nighthawk_FPGA_IO_gpib_disable: gpio@0x10004a440 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004a440 0x00000020 >;
@@ -200,7 +200,7 @@
                 bidirbits = < 0x00000000 >;	/* appended from boardinfo */
             }; //end gpio@0x10004a440 (Nighthawk_FPGA_IO_gpib_disable)
 
-            Nighthawk_FPGA_IO_fpga_reset: gpio_reset@10004a600 {
+            Nighthawk_FPGA_IO_fpga_reset: gpio@0x10004a600 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004a600 0x00000020 >;
@@ -214,7 +214,7 @@
                 bidirbits = < 0x00000000 >;	/* appended from boardinfo */
             }; //end gpio@0x10004a600 (Nighthawk_FPGA_IO_fpga_reset)
 
-            Nighthawk_FPGA_IO_cadmus_control: gpio_cadmus@10004d200 {
+            Nighthawk_FPGA_IO_cadmus_control: gpio@0x10004d200 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004d200 0x00000020 >;
@@ -228,7 +228,7 @@
                 bidirbits = < 0x00000000 >;	/* appended from boardinfo */
             }; //end gpio@0x10004d200 (Nighthawk_FPGA_IO_cadmus_control)
 
-            Nighthawk_FPGA_IO_ig_reset: gpio@_ig_reset10004d220 {
+            Nighthawk_FPGA_IO_ig_reset: gpio@0x10004d220 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x0004d220 0x00000020 >;
@@ -242,7 +242,7 @@
                 bidirbits = <0x00000000>;	/* appended from boardinfo */
             }; //end gpio@0x10004d220 (Nighthawk_FPGA_IO_ig_reset)
 
-            Nighthawk_FPGA_IO_LCD_PWM_VCOM: gpio_pwm_vcom@10004d240 {
+            Nighthawk_FPGA_IO_LCD_PWM_VCOM: gpio@0x10004d240 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 reg = < 0x0004d240 0x00000010 >;
                 clocks = < &h2f_user0_clk >;
