@@ -72,7 +72,7 @@
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
-                name = "portA";
+                reg-name = "portA";
                 interrupt-parent = < &intc >;
                 interrupts = < 0 59 1 >;
                 clocks = < &h2f_user0_clk >;
