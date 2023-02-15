@@ -73,7 +73,7 @@
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
                 reg-name = "portA";
-                serial-number = "00000000A0000000"
+                serial-number = "00000000A0000000";
                 interrupt-parent = < &intc >;
                 interrupts = < 0 59 1 >;
                 clocks = < &h2f_user0_clk >;
