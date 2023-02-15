@@ -68,12 +68,12 @@
                 dmas = < &pdma 0 >;
             }; //end gpib@0x100049800 (Nighthawk_FPGA_IO_fmh_gpib_0)
 
-            Nighthawk_FPGA_IO_Port_A: gpio_A@0x100049a00 {
+            Nighthawk_FPGA_IO_Port_A: gpio@0x100049a00 {
                 compatible = "flk,fgpio-1.0";	/* appended from boardinfo */
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
                 reg-name = "portA";
-                name = "portA";
+                serial-number = "00000000A0000000"
                 interrupt-parent = < &intc >;
                 interrupts = < 0 59 1 >;
                 clocks = < &h2f_user0_clk >;
@@ -90,13 +90,12 @@
                 flk,interrupt_type = < 1 >;	/* appended from boardinfo */
             }; //end gpio@0x100049a00 (Nighthawk_FPGA_IO_Port_A)
 
-            Nighthawk_FPGA_IO_led_pio: gpioLED@0x100049180 {
+            Nighthawk_FPGA_IO_led_pio: gpio@0x100049180 {
                 compatible = "flk,fgpio-1.0";
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
-                serial-number = "00000000A0000001";
                 reg = < 0x00049180 0x00000020 >;
                 reg-name = "portLED";
-                name = "portLED";
+                serial-number = "00000000A0000001";
                 clocks = < &h2f_user0_clk >;
                 altr,ngpio = <1>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
