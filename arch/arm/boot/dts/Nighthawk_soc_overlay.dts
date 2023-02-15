@@ -73,6 +73,7 @@
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 reg = < 0x00049a00 0x00000020 >;
                 reg-name = "portA";
+                name = "portA";
                 interrupt-parent = < &intc >;
                 interrupts = < 0 59 1 >;
                 clocks = < &h2f_user0_clk >;
@@ -94,6 +95,8 @@
                 /* compatible = "altr,pio-17.0", "altr,pio-1.0"; */
                 serial-number = "00000000A0000001";
                 reg = < 0x00049180 0x00000020 >;
+                reg-name = "portLED";
+                name = "portLED";
                 clocks = < &h2f_user0_clk >;
                 altr,ngpio = <1>;
                 resetvalue = < 0 >;	/* embeddedsw.dts.params.resetvalue type NUMBER */
